@@ -1,21 +1,18 @@
 <script setup>
+import Globe from '../components/Globe.vue';
 </script>
 
 <template>
   <main>
-    <h1>Music Discovery App</h1>
-    <p>Welcome to your Vue.js application!</p>
+    <Globe />
   </main>
 </template>
 
 <style scoped>
 main {
-  text-align: center;
-  padding: 2rem;
-}
-
-h1 {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
 }
 </style>
