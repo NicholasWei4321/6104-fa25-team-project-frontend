@@ -19,3 +19,30 @@ export async function logExploration(user, song, country) {
   });
   return response.data;
 }
+
+export const getExploredCountries = async (userId) => {
+  if (!userId) return [];
+  try {
+    const response = await apiClient.post('/Passport/_getExploredCountries', {
+      user: userId,
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch explored countries:', error);
+    return [];
+  }
+};
+
+export const getHistoryForCountry = async (userId, country) => {
+  if (!userId || !country) return [];
+  try {
+    const response = await apiClient.post('/Passport/_getHistoryForCountry', {
+      user: userId,
+      country,
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Failed to fetch history for ${country}:`, error);
+    return [];
+  }
+};

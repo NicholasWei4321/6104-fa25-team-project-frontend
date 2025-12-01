@@ -1,11 +1,16 @@
 <script setup>
 import Globe from '../components/Globe.vue';
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, onUnmounted, ref, computed } from 'vue';
 import gsap from 'gsap';
 import { useAuthStore } from '../stores/auth.js';
+import { usePassportStore } from '../stores/passport.js';
 
 const authStore = useAuthStore();
-const passport = ref(null);
+const passportStore = usePassportStore();
+const passportWrapper = ref(null);
+const searchTerm = ref('');
+const searchOpen = ref(false);
+const searchRef = ref(null);
 
 // State to track which sheet is currently the "top" one on the left stack.
 // -1 means book is closed (no sheets on left).
@@ -14,7 +19,139 @@ const passport = ref(null);
 const currentSheetIndex = ref(-1); 
 const isAnimating = ref(false);
 
-const totalSheets = 5; // Cover + 3 internal sheets + Back Cover
+const visaPages = computed(() =>
+  (passportStore.exploredCountries || []).map((entry) => entry?.country ?? entry)
+);
+
+const totalSheets = computed(() => {
+  const count = visaPages.value.length;
+  const additionalSheets = Math.max(0, Math.ceil((count - 1) / 2));
+  // Base sheets: cover + profile/data + back cover
+  return 3 + additionalSheets;
+});
+
+const pageAssignments = computed(() => {
+  const assignments = {};
+  let pageNumber = 1;
+
+  visaPages.value.forEach((country, idx) => {
+    let sheetIndex;
+    let face;
+
+    if (idx === 0) {
+      sheetIndex = 1; // backside of profile page
+      face = 'back';
+    } else {
+      const offset = idx - 1;
+      sheetIndex = 2 + Math.floor(offset / 2);
+      face = offset % 2 === 0 ? 'front' : 'back';
+    }
+
+    assignments[`${sheetIndex}-${face}`] = {
+      country,
+      page: pageNumber,
+    };
+    pageNumber += 1;
+  });
+
+  return assignments;
+});
+
+const getVisaData = (sheetIndex, face) =>
+  pageAssignments.value[`${sheetIndex}-${face}`] || null;
+
+const pageIndexForCountry = computed(() => {
+  const mapping = {};
+  Object.values(pageAssignments.value).forEach(({ country }, idx) => {
+    if (country && mapping[country] === undefined) {
+      mapping[country] = idx;
+    }
+  });
+  return mapping;
+});
+
+const getHistoryForCountry = (country) =>
+  (country && passportStore.histories[country]) || [];
+
+const isHistoryLoading = (country) =>
+  !!(country && passportStore.historyLoading[country]);
+
+const formatDate = (value) => {
+  if (!value) return '';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+};
+
+const matchingCountries = computed(() => {
+  const term = searchTerm.value.trim().toLowerCase();
+  if (!term) return [];
+  const unique = [...new Set(visaPages.value.filter(Boolean))];
+  return unique.filter(
+    (country) => country && country.toLowerCase().includes(term)
+  );
+});
+
+const goToCountry = (country) => {
+  if (!country) return;
+  const entries = Object.entries(pageAssignments.value);
+  const targetEntry = entries.find(([, value]) => value.country === country);
+  if (!targetEntry) return;
+
+  const [key] = targetEntry;
+  const [sheetStr] = key.split('-');
+  const targetSheet = Number(sheetStr);
+  if (Number.isNaN(targetSheet)) return;
+
+  const beginNavigation = () => {
+    if (isAnimating.value) {
+      setTimeout(beginNavigation, 50);
+      return;
+    }
+
+    const currentSheet = currentSheetIndex.value;
+    if (targetSheet === currentSheet) {
+      searchTerm.value = '';
+      searchOpen.value = false;
+      return;
+    }
+
+    const direction = targetSheet > currentSheet ? 'next' : 'prev';
+    const steps = Math.abs(targetSheet - currentSheet);
+    const delay = Math.max(80, 200 - steps * 30);
+
+    let completed = 0;
+    const flipNext = () => {
+      if (completed >= steps) {
+        searchTerm.value = '';
+        searchOpen.value = false;
+        return;
+      }
+      if (isAnimating.value) {
+        setTimeout(flipNext, 40);
+        return;
+      }
+      turnPage(direction);
+      completed += 1;
+      setTimeout(flipNext, delay);
+    };
+
+    flipNext();
+  };
+
+  beginNavigation();
+};
+
+const handleClickOutside = (event) => {
+  if (!searchRef.value) return;
+  if (!searchRef.value.contains(event.target)) {
+    searchOpen.value = false;
+  }
+};
 
 // Z-Index calculation for a sheet
 const getZIndex = (index) => {
@@ -23,7 +160,7 @@ const getZIndex = (index) => {
     return index + 1;
   } else {
     // Sheet is on the right side. Lower index should be on top.
-    return totalSheets - index;
+    return totalSheets.value - index;
   }
 };
 
@@ -33,7 +170,7 @@ const turnPage = (direction) => {
   if (direction === 'next') {
     // We want to turn the next available sheet on the right (currentSheetIndex + 1) to the left
     const sheetToTurn = currentSheetIndex.value + 1;
-    if (sheetToTurn >= totalSheets) return; // No more sheets
+    if (sheetToTurn >= totalSheets.value) return; // No more sheets
 
     isAnimating.value = true;
     
@@ -44,7 +181,7 @@ const turnPage = (direction) => {
       ease: "power2.inOut",
       onStart: () => {
         // Ensure it lifts slightly above others during turn (optional visual tweak)
-        gsap.set(`.sheet-${sheetToTurn}`, { zIndex: totalSheets + 10 });
+        gsap.set(`.sheet-${sheetToTurn}`, { zIndex: totalSheets.value + 10 });
       },
       onComplete: () => {
         currentSheetIndex.value = sheetToTurn;
@@ -58,7 +195,7 @@ const turnPage = (direction) => {
     // Shift passport center logic
     if (currentSheetIndex.value === -1) {
        // Opening the book (first turn), shift to center
-       gsap.to(passport.value, {
+      gsap.to(passportWrapper.value, {
          x: 160,
          duration: 1.2,
          ease: "power2.inOut"
@@ -66,8 +203,8 @@ const turnPage = (direction) => {
     }
 
     // Logic for closing the BACK cover (last sheet turned)
-    if (sheetToTurn === totalSheets - 1) {
-       gsap.to(passport.value, {
+    if (sheetToTurn === totalSheets.value - 1) {
+      gsap.to(passportWrapper.value, {
          x: 320, // Shift RIGHT to center the left-hanging stack (closed back)
          duration: 1.2,
          ease: "power2.inOut"
@@ -86,7 +223,7 @@ const turnPage = (direction) => {
       duration: 1.2,
       ease: "power2.inOut",
       onStart: () => {
-        gsap.set(`.sheet-${sheetToTurn}`, { zIndex: totalSheets + 10 });
+        gsap.set(`.sheet-${sheetToTurn}`, { zIndex: totalSheets.value + 10 });
       },
       onComplete: () => {
         currentSheetIndex.value = sheetToTurn - 1;
@@ -97,7 +234,7 @@ const turnPage = (direction) => {
     // Close book logic (Front Cover)
     if (sheetToTurn === 0) {
       // Closing the front cover, shift back
-       gsap.to(passport.value, {
+       gsap.to(passportWrapper.value, {
          x: 0,
          duration: 1.2,
          ease: "power2.inOut"
@@ -107,8 +244,8 @@ const turnPage = (direction) => {
     // Re-open from Back Cover logic
     // If we are unturning the last sheet (Back Cover), we need to shift back to "open book" center (160)
     // from the closed back position (320)
-    if (sheetToTurn === totalSheets - 1) {
-       gsap.to(passport.value, {
+    if (sheetToTurn === totalSheets.value - 1) {
+       gsap.to(passportWrapper.value, {
          x: 160,
          duration: 1.2,
          ease: "power2.inOut"
@@ -117,11 +254,35 @@ const turnPage = (direction) => {
   }
 };
 
-onMounted(() => {
+const handleKeydown = (e) => {
+  if (e.key === 'ArrowRight') {
+    turnPage('next');
+  } else if (e.key === 'ArrowLeft') {
+    turnPage('prev');
+  }
+};
+
+onMounted(async () => {
+  if (authStore.user) {
+    await passportStore.fetchExploredCountries(authStore.user);
+    await Promise.all(
+      visaPages.value.map((country) =>
+        passportStore.fetchHistoryForCountry(authStore.user, country)
+      )
+    );
+  }
   // Initial animation: Open the passport (Turn Sheet 0)
   setTimeout(() => {
     turnPage('next');
   }, 800);
+  
+  window.addEventListener('keydown', handleKeydown);
+  document.addEventListener('mousedown', handleClickOutside);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown);
+  document.removeEventListener('mousedown', handleClickOutside);
 });
 </script>
 
@@ -130,7 +291,32 @@ onMounted(() => {
     <Globe />
     
     <div class="passport-stage">
-      <div class="passport" ref="passport">
+      <div class="passport-wrapper" ref="passportWrapper">
+        <div class="passport-search" ref="searchRef">
+          <input
+            v-model="searchTerm"
+            type="text"
+            placeholder="Search explored countries"
+            @focus="searchOpen = true"
+            @input="searchOpen = true"
+          />
+          <ul
+            v-if="searchOpen && searchTerm && matchingCountries.length"
+            class="search-results"
+          >
+            <li
+              v-for="country in matchingCountries"
+              :key="country"
+              @click="goToCountry(country)"
+            >
+              {{ country }}
+            </li>
+          </ul>
+          <div v-else-if="searchOpen && searchTerm" class="search-empty">
+            No matches found
+          </div>
+        </div>
+        <div class="passport">
         
         <!-- Sheets Loop -->
         <div 
@@ -213,14 +399,40 @@ onMounted(() => {
                </div>
             </div>
 
-            <!-- Sheets > 1 Front: VISAS (Right Side) -->
-            <div v-else class="page-design stamps-page">
-               <h3>Visas</h3>
-               <div class="stamps-grid">
-                 <div class="stamp" v-for="i in 4" :key="'front-stamp-'+index+'-'+i"></div>
-               </div>
-               <!-- Page Number Logic: Sheet 2 Front is Page 3, Sheet 3 Front is Page 5 -->
-               <div class="page-number">{{ (index - 1) * 2 + 1 }}</div>
+            <!-- Sheets > 1 Front: Country Visa Pages -->
+            <div v-else-if="index < totalSheets - 1" class="page-design stamps-page">
+               <template v-if="getVisaData(index, 'front')">
+                 <div class="visa-country">
+                   <span>{{ getVisaData(index, 'front').country }}</span>
+                 </div>
+                 <div class="visa-entries">
+                   <template v-if="isHistoryLoading(getVisaData(index, 'front').country)">
+                     <div class="visa-entry loading">Loading history…</div>
+                   </template>
+                   <template v-else-if="getHistoryForCountry(getVisaData(index, 'front').country).length">
+                     <div
+                       class="visa-entry"
+                       v-for="(entry, entryIdx) in getHistoryForCountry(getVisaData(index, 'front').country)"
+                       :key="entry.date ? `${entry.date}-${entryIdx}` : `${entry.songTitle}-${entryIdx}`"
+                     >
+                       <div class="visa-song">{{ entry.songTitle }}</div>
+                       <div class="visa-artist">{{ entry.artist }}</div>
+                       <div class="visa-date">{{ formatDate(entry.date) }}</div>
+                     </div>
+                   </template>
+                   <template v-else>
+                     <div class="visa-entry empty">No listening history yet.</div>
+                   </template>
+                 </div>
+                 <div class="page-number">
+                   {{ getVisaData(index, 'front').page }}
+                 </div>
+               </template>
+               <template v-else>
+                 <div class="visa-entries ghost">
+                   <div class="visa-entry empty">Blank Page</div>
+                 </div>
+               </template>
             </div>
 
           </div>
@@ -256,22 +468,47 @@ onMounted(() => {
               </div>
             </div>
 
-            <!-- Sheet > 0 Back: VISAS (Left Side) -->
+            <!-- Sheet > 0 Back: Country Visa Pages / Blank -->
             <div v-else class="page-design stamps-page left-side">
-               <h3>Visas</h3>
-               <div class="stamps-grid">
-                 <div class="stamp" v-for="i in 4" :key="'back-stamp-'+index+'-'+i"></div>
-               </div>
-               <!-- Page Number Logic: Sheet 1 Back is Page 2, Sheet 2 Back is Page 4 -->
-               <div class="page-number left">{{ index * 2 }}</div>
+               <template v-if="getVisaData(index, 'back')">
+                 <div class="visa-country">
+                   <span>{{ getVisaData(index, 'back').country }}</span>
+                 </div>
+                 <div class="visa-entries">
+                   <template v-if="isHistoryLoading(getVisaData(index, 'back').country)">
+                     <div class="visa-entry loading">Loading history…</div>
+                   </template>
+                   <template v-else-if="getHistoryForCountry(getVisaData(index, 'back').country).length">
+                     <div
+                       class="visa-entry"
+                       v-for="(entry, entryIdx) in getHistoryForCountry(getVisaData(index, 'back').country)"
+                       :key="entry.date ? `${entry.date}-${entryIdx}` : `${entry.songTitle}-${entryIdx}`"
+                     >
+                       <div class="visa-song">{{ entry.songTitle }}</div>
+                       <div class="visa-artist">{{ entry.artist }}</div>
+                       <div class="visa-date">{{ formatDate(entry.date) }}</div>
+                     </div>
+                   </template>
+                   <template v-else>
+                     <div class="visa-entry empty">No listening history yet.</div>
+                   </template>
+                 </div>
+                 <div class="page-number left">
+                   {{ getVisaData(index, 'back').page }}
+                 </div>
+               </template>
+               <template v-else>
+                 <div class="visa-entries ghost">
+                   <div class="visa-entry empty">Blank Page</div>
+                 </div>
+               </template>
             </div>
 
           </div>
 
         </div>
 
-      </div>
-      
+        </div>
       <div class="passport-controls">
         <button @click="turnPage('prev')" :disabled="isAnimating || currentSheetIndex < 0" class="control-btn">
           &larr;
@@ -279,6 +516,7 @@ onMounted(() => {
         <button @click="turnPage('next')" :disabled="isAnimating || currentSheetIndex >= totalSheets - 1" class="control-btn">
           &rarr;
         </button>
+      </div>
       </div>
     </div>
   </div>
@@ -311,6 +549,12 @@ onMounted(() => {
   align-items: center;
   perspective: 2000px; /* Increased perspective for better 3D */
   z-index: 10;
+}
+
+.passport-wrapper {
+  position: relative;
+  width: 320px;
+  height: 460px;
 }
 
 .passport {
@@ -402,6 +646,7 @@ onMounted(() => {
   height: 100%;
   box-shadow: inset 10px 0 20px -10px rgba(0,0,0,0.2); /* Shadow near spine */
   border-radius: 0 5px 5px 0;
+  position: relative;
 }
 
 .page-design.left-side {
@@ -555,6 +800,17 @@ onMounted(() => {
   color: #0d1b2a;
 }
 
+.visa-country {
+  position: absolute;
+  top: 10px;
+  left: 20px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #0d1b2a;
+}
+
 .stamps-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -564,12 +820,124 @@ onMounted(() => {
   margin-top: 20px;
 }
 
+.stamps-grid.ghost .stamp {
+  opacity: 0.2;
+  border-style: dotted;
+}
+
 .stamp {
   border: 2px dashed #ccc;
   border-radius: 10px;
   opacity: 0.5;
 }
 
+.visa-entries {
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 8px;
+  max-height: 70%;
+}
+
+.visa-entry {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.85);
+  font-size: 0.85rem;
+}
+
+.visa-entry.loading,
+.visa-entry.empty {
+  text-align: center;
+  grid-template-columns: 1fr;
+  font-style: italic;
+  color: #555;
+}
+
+.visa-song {
+  font-weight: 600;
+}
+
+.visa-artist {
+  color: #555;
+}
+
+.visa-date {
+  text-align: right;
+  font-size: 0.8rem;
+  color: #777;
+}
+
+.visa-entries.ghost .visa-entry {
+  opacity: 0.4;
+  border-style: dashed;
+}
+
+.passport-search {
+  position: absolute;
+  top: -70px;
+  right: 0;
+  width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 30;
+}
+
+.passport-search input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.passport-search input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.search-results,
+.search-empty {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 8px;
+  color: #fff;
+  font-size: 0.85rem;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.search-results {
+  list-style: none;
+  margin: 0;
+}
+
+.search-results li {
+  padding: 6px 4px;
+}
+
+.search-results li + li {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.search-results li {
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.search-results li:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
 .page-number {
   position: absolute;
   bottom: 10px;
@@ -585,9 +953,8 @@ onMounted(() => {
 
 .passport-controls {
   position: absolute;
-  bottom: calc(50% - 280px);
-  left: 50%; 
-  transform: translateX(220px);
+  bottom: -70px;
+  right: 0;
   display: flex;
   gap: 15px;
   z-index: 20;
