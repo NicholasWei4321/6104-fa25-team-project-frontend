@@ -1,18 +1,18 @@
 <script setup>
-import { RouterLink, RouterView, useRouter } from 'vue-router'
-import { onMounted } from 'vue'
-import { useAuthStore } from './stores/auth.js'
+import { RouterLink, RouterView, useRouter } from "vue-router";
+import { onMounted } from "vue";
+import { useAuthStore } from "./stores/auth.js";
 
-const router = useRouter()
-const authStore = useAuthStore()
+const router = useRouter();
+const authStore = useAuthStore();
 
 onMounted(() => {
-  authStore.init()
-})
+  authStore.init();
+});
 
 async function handleLogout() {
-  await authStore.logout()
-  router.push('/login')
+  await authStore.logout();
+  router.push("/login");
 }
 </script>
 
@@ -24,7 +24,9 @@ async function handleLogout() {
         <template v-if="authStore.isAuthenticated">
           <RouterLink to="/profile">Profile</RouterLink>
           <RouterLink to="/playlists">Playlists</RouterLink>
-          <a @click="handleLogout" class="logout-link">Logout ({{ authStore.username }})</a>
+          <a @click="handleLogout" class="logout-link"
+            >Logout ({{ authStore.username }})</a
+          >
         </template>
         <RouterLink v-else to="/login">Login</RouterLink>
       </nav>
