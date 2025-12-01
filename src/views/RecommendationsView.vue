@@ -1,5 +1,13 @@
 <script setup>
+import { ref, onMounted } from "vue";
 import SongCard from "@/components/SongCard.vue";
+import { getSystemRecs } from "@/api/recommendations.js";
+
+// const ourPicks = ref([]);
+// const communityPicks = ref([]);
+
+// Temporary hardcoded data
+const country = "Taiwan";
 
 const ourPicks = [
   {
@@ -41,13 +49,24 @@ const communityPicks = [
     youtubeUrl: "https://www.youtube.com/watch?v=9bZkp7q19f0",
   },
 ];
+
+// onMounted(async () => {
+//   try {
+//     const recs = await getSystemRecs(country);
+//     ourPicks.value = recs || [];
+//   } catch (e) {
+//     console.error('Failed to fetch system recommendations', e);
+//     ourPicks.value = [];
+//   }
+// });
 </script>
 
 <template>
   <div class="recommendations">
     <div class="display-box">
       <div class="title-container">
-        <h1>Country</h1>
+        <!-- TODO: "Country" to be changed to country name that is passed in as a prop -->
+        <h1>{{ country }}</h1>
       </div>
       <div class="main-container">
         <div class="panel-container">
