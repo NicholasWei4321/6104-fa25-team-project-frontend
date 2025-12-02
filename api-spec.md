@@ -659,7 +659,16 @@
 ```json
 [
   {
-    "song": "string",
+    "song": {
+                "_id": "string",
+                "countryName": "string",
+                "songTitle": "string",
+                "artist": "string",
+                "language": "string",
+                "youtubeURL": "string",
+                "recType": "string",
+                "genre": "string"
+    },
     "date": "string"
   }
 ]

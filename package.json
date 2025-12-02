@@ -16,6 +16,7 @@
     "@fortawesome/vue-fontawesome": "^3.1.2",
     "axios": "^1.13.1",
     "globe.gl": "^2.45.0",
+    "gsap": "^3.13.0",
     "pinia": "^3.0.3",
     "three": "^0.181.2",
     "three-globe": "^2.45.0",
