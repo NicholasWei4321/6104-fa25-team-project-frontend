@@ -28,7 +28,7 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: "/recommendations",
+      path: "/recommendations/:country",
       name: "recommendations",
       component: () => import("../views/RecommendationsView.vue"),
       meta: { requiresAuth: true },

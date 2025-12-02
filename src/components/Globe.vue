@@ -1,12 +1,12 @@
 <template>
   <div class="globe-wrapper">
     <div ref="container" class="globe-container"></div>
-    <div 
+    <div
       v-if="tooltip.visible"
       class="globe-tooltip"
-      :style="{ 
-        left: tooltip.x + 'px', 
-        top: tooltip.y + 'px' 
+      :style="{
+        left: tooltip.x + 'px',
+        top: tooltip.y + 'px'
       }"
     >
       <div class="tooltip-content">
@@ -19,8 +19,11 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 import Globe from 'globe.gl';
 import * as THREE from 'three';
+
+const router = useRouter();
 
 const container = ref(null);
 const tooltip = ref({
@@ -96,12 +99,18 @@ onMounted(() => {
           } else {
             tooltip.value.visible = false;
           }
+        })
+        .onPolygonClick(clickD => {
+          if (clickD) {
+            const countryName = clickD.properties.ADMIN;
+            router.push({ name: 'recommendations', params: { country: countryName } });
+          }
         });
     });
 
   // Auto-rotate
   world.controls().autoRotate = false;
-  
+
   // Handle resize
   window.addEventListener('resize', onWindowResize);
   window.addEventListener('mousemove', onMouseMove);

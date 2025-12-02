@@ -31,9 +31,7 @@ export async function getPlaylist(playlist) {
  * @returns {Promise<{playlist: string}>}
  */
 export async function createPlaylist(name) {
-  const session = localStorage.getItem('sessionToken');
   const response = await apiClient.post('/Playlist/createPlaylist', {
-    session,
     name
   });
   return response.data;
@@ -45,9 +43,7 @@ export async function createPlaylist(name) {
  * @returns {Promise<void>}
  */
 export async function deletePlaylist(playlist) {
-  const session = localStorage.getItem('sessionToken');
   const response = await apiClient.post('/Playlist/deletePlaylist', {
-    session,
     playlist
   });
   return response.data;
@@ -60,9 +56,7 @@ export async function deletePlaylist(playlist) {
  * @returns {Promise<void>}
  */
 export async function renamePlaylist(playlist, newName) {
-  const session = localStorage.getItem('sessionToken');
   const response = await apiClient.post('/Playlist/renamePlaylist', {
-    session,
     playlist,
     newName
   });
@@ -76,9 +70,7 @@ export async function renamePlaylist(playlist, newName) {
  * @returns {Promise<void>}
  */
 export async function addSong(playlist, song) {
-  const session = localStorage.getItem('sessionToken');
   const response = await apiClient.post('/Playlist/addSong', {
-    session,
     playlist,
     song
   });
@@ -92,9 +84,7 @@ export async function addSong(playlist, song) {
  * @returns {Promise<void>}
  */
 export async function removeSong(playlist, song) {
-  const session = localStorage.getItem('sessionToken');
   const response = await apiClient.post('/Playlist/removeSong', {
-    session,
     playlist,
     song
   });
@@ -108,9 +98,7 @@ export async function removeSong(playlist, song) {
  * @returns {Promise<void>}
  */
 export async function reorderSongs(playlist, songs) {
-  const session = localStorage.getItem('sessionToken');
   const response = await apiClient.post('/Playlist/reorderSongs', {
-    session,
     playlist,
     songs
   });

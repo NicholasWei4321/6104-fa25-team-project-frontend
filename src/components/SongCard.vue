@@ -35,14 +35,20 @@
 </template>
 
 <script>
+import { useAuthStore } from '@/stores/auth.js';
+import { logExploration } from '@/api/passport.js';
+
 export default {
   name: "SongCard",
   props: {
+    songId: { type: String, default: "" },
     title: { type: String, required: true },
     artist: { type: String, required: true },
     genre: { type: String, default: "" },
     language: { type: String, required: true },
     youtubeUrl: { type: String, required: true },
+    country: { type: String, required: true },
+    recType: { type: String, default: "" },
   },
   data() {
     return {
@@ -57,8 +63,31 @@ export default {
     },
   },
   methods: {
-    toggleExpand() {
+    async toggleExpand() {
       this.isExpanded = !this.isExpanded;
+
+      // Log exploration when card is expanded (clicked)
+      if (this.isExpanded) {
+        try {
+          const authStore = useAuthStore();
+          if (authStore.user) {
+            // Create song object matching API spec
+            const songObject = {
+              _id: this.songId,
+              countryName: this.country,
+              songTitle: this.title,
+              artist: this.artist,
+              language: this.language,
+              youtubeURL: this.youtubeUrl,
+              recType: this.recType,
+              genre: this.genre,
+            };
+            await logExploration(authStore.user, songObject, this.country);
+          }
+        } catch (error) {
+          console.error('Failed to log exploration:', error);
+        }
+      }
     },
     extractVideoId(url) {
       // Handle youtube.com/watch?v=ID

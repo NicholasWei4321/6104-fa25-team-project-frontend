@@ -1,64 +1,39 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
+import { useRoute } from "vue-router";
 import SongCard from "@/components/SongCard.vue";
-import { getSystemRecs } from "@/api/recommendations.js";
+import { getSystemRecs, getCommunityRecs } from "@/api/recommendations.js";
 
-// const ourPicks = ref([]);
-// const communityPicks = ref([]);
+const route = useRoute();
+const country = computed(() => route.params.country || "Taiwan");
 
-// Temporary hardcoded data
-const country = "Taiwan";
+const ourPicks = ref([]);
+const communityPicks = ref([]);
+const loading = ref(false);
+const error = ref(null);
 
-const ourPicks = [
-  {
-    title: "Imagine",
-    artist: "John Lennon",
-    genre: "Rock",
-    language: "English",
-    youtubeUrl: "https://www.youtube.com/watch?v=YkgkThdzX-8",
-  },
-  {
-    title: "Shape of You",
-    artist: "Ed Sheeran",
-    genre: "Pop",
-    language: "English",
-    youtubeUrl: "https://www.youtube.com/watch?v=JGwWNGJdvx8",
-  },
-  {
-    title: "Bohemian Rhapsody",
-    artist: "Queen",
-    genre: "Rock",
-    language: "English",
-    youtubeUrl: "https://www.youtube.com/watch?v=fJ9rUzIMcZQ",
-  },
-];
+onMounted(async () => {
+  loading.value = true;
+  error.value = null;
 
-const communityPicks = [
-  {
-    title: "Despacito",
-    artist: "Luis Fonsi",
-    genre: "Reggaeton",
-    language: "Spanish",
-    youtubeUrl: "https://www.youtube.com/watch?v=kJQP7kiw5Fk",
-  },
-  {
-    title: "Gangnam Style",
-    artist: "PSY",
-    genre: "K-Pop",
-    language: "Korean",
-    youtubeUrl: "https://www.youtube.com/watch?v=9bZkp7q19f0",
-  },
-];
+  try {
+    // Fetch both system and community recommendations in parallel
+    const [systemRecs, commRecs] = await Promise.all([
+      getSystemRecs(country.value),
+      getCommunityRecs(country.value)
+    ]);
 
-// onMounted(async () => {
-//   try {
-//     const recs = await getSystemRecs(country);
-//     ourPicks.value = recs || [];
-//   } catch (e) {
-//     console.error('Failed to fetch system recommendations', e);
-//     ourPicks.value = [];
-//   }
-// });
+    ourPicks.value = systemRecs || [];
+    communityPicks.value = commRecs || [];
+  } catch (e) {
+    console.error('Failed to fetch recommendations', e);
+    error.value = 'Failed to load recommendations';
+    ourPicks.value = [];
+    communityPicks.value = [];
+  } finally {
+    loading.value = false;
+  }
+});
 </script>
 
 <template>
@@ -75,11 +50,14 @@ const communityPicks = [
             <SongCard
               v-for="s in ourPicks"
               :key="s.title"
+              :song-id="s._id || ''"
               :title="s.title"
               :artist="s.artist"
               :genre="s.genre"
               :language="s.language"
               :youtube-url="s.youtubeUrl"
+              :country="country"
+              :rec-type="s.recType || 'System'"
             />
           </div>
         </div>
@@ -89,11 +67,14 @@ const communityPicks = [
             <SongCard
               v-for="s in communityPicks"
               :key="s.title"
+              :song-id="s._id || ''"
               :title="s.title"
               :artist="s.artist"
               :genre="s.genre"
               :language="s.language"
               :youtube-url="s.youtubeUrl"
+              :country="country"
+              :rec-type="s.recType || 'Community'"
             />
           </div>
         </div>

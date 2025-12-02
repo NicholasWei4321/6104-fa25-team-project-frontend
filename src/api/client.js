@@ -17,7 +17,7 @@ apiClient.interceptors.request.use((config) => {
   if (sessionToken) {
     config.data = {
       ...config.data,
-      sessionToken,
+      session: sessionToken,
     };
   }
   return config;
