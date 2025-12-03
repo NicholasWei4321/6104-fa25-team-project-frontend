@@ -6,32 +6,35 @@
       class="globe-tooltip"
       :style="{
         left: tooltip.x + 'px',
-        top: tooltip.y + 'px'
+        top: tooltip.y + 'px',
       }"
     >
       <div class="tooltip-content">
         <strong>{{ tooltip.content }}</strong>
-        <div v-if="tooltip.subContent" class="tooltip-sub">{{ tooltip.subContent }}</div>
+        <div v-if="tooltip.subContent" class="tooltip-sub">
+          {{ tooltip.subContent }}
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
-import Globe from 'globe.gl';
-import * as THREE from 'three';
+import { ref, onMounted, onUnmounted } from "vue";
+// import { useRouter } from 'vue-router';
+const emit = defineEmits(["select-country"]);
+import Globe from "globe.gl";
+import * as THREE from "three";
 
-const router = useRouter();
+// const router = useRouter();
 
 const container = ref(null);
 const tooltip = ref({
   visible: false,
-  content: '',
-  subContent: '',
+  content: "",
+  subContent: "",
   x: 0,
-  y: 0
+  y: 0,
 });
 
 let world;
@@ -39,11 +42,15 @@ let world;
 onMounted(() => {
   // Initialize Globe
   world = Globe()(container.value)
-    .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
-    .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
-    .backgroundColor('#000000') // Use solid color instead of image
+    .globeImageUrl(
+      "https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
+    )
+    .bumpImageUrl(
+      "https://unpkg.com/three-globe/example/img/earth-topology.png"
+    )
+    .backgroundColor("#000000") // Use solid color instead of image
     .showAtmosphere(true)
-    .atmosphereColor('#3a228a')
+    .atmosphereColor("#3a228a")
     .atmosphereAltitude(0.25)
     .width(container.value.clientWidth)
     .height(container.value.clientHeight);
@@ -54,7 +61,7 @@ onMounted(() => {
     color: 0xffffff,
     size: 0.5,
     transparent: true,
-    opacity: 0.4 // Reduced opacity as requested
+    opacity: 0.4, // Reduced opacity as requested
   });
 
   const starCount = 5000; // Adjust count as needed
@@ -69,41 +76,55 @@ onMounted(() => {
     starPositions[i * 3 + 2] = z;
   }
 
-  starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+  starGeometry.setAttribute(
+    "position",
+    new THREE.BufferAttribute(starPositions, 3)
+  );
   const stars = new THREE.Points(starGeometry, starMaterial);
   world.scene().add(stars);
 
   // Fetch Country Data
-  fetch('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson')
-    .then(res => res.json())
-    .then(countries => {
-      world.polygonsData(countries.features.filter(d => d.properties.ISO_A2 !== 'AQ'))
+  fetch(
+    "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson"
+  )
+    .then((res) => res.json())
+    .then((countries) => {
+      world
+        .polygonsData(
+          countries.features.filter((d) => d.properties.ISO_A2 !== "AQ")
+        )
         .polygonAltitude(0.01)
-        .polygonCapColor(() => 'rgba(0,0,0,0)')
-        .polygonSideColor(() => 'rgba(0,0,0,0)')
-        .polygonStrokeColor(() => '#111')
+        .polygonCapColor(() => "rgba(0,0,0,0)")
+        .polygonSideColor(() => "rgba(0,0,0,0)")
+        .polygonStrokeColor(() => "#111")
         .polygonLabel(() => null) // Disable default tooltip to use our custom one
-        .onPolygonHover(hoverD => {
+        .onPolygonHover((hoverD) => {
           // Update styles
           world
-            .polygonCapColor(d => d === hoverD ? 'rgba(70, 130, 180, 0.6)' : 'rgba(0,0,0,0)')
-            .polygonSideColor(d => d === hoverD ? 'rgba(70, 130, 180, 0.15)' : 'rgba(0,0,0,0)')
-            .polygonStrokeColor(d => d === hoverD ? '#30d5c8' : '#111') // Highlight border
-            .polygonAltitude(d => d === hoverD ? 0.06 : 0.01);
+            .polygonCapColor((d) =>
+              d === hoverD ? "rgba(70, 130, 180, 0.6)" : "rgba(0,0,0,0)"
+            )
+            .polygonSideColor((d) =>
+              d === hoverD ? "rgba(70, 130, 180, 0.15)" : "rgba(0,0,0,0)"
+            )
+            .polygonStrokeColor((d) => (d === hoverD ? "#30d5c8" : "#111")) // Highlight border
+            .polygonAltitude((d) => (d === hoverD ? 0.06 : 0.01));
 
           // Update tooltip state
           if (hoverD) {
             tooltip.value.visible = true;
             tooltip.value.content = hoverD.properties.ADMIN;
-            tooltip.value.subContent = `Population: ${Math.round(hoverD.properties.POP_EST / 1000000)}M`;
+            tooltip.value.subContent = `Population: ${Math.round(
+              hoverD.properties.POP_EST / 1000000
+            )}M`;
           } else {
             tooltip.value.visible = false;
           }
         })
-        .onPolygonClick(clickD => {
+        .onPolygonClick((clickD) => {
           if (clickD) {
             const countryName = clickD.properties.ADMIN;
-            router.push({ name: 'recommendations', params: { country: countryName } });
+            emit("select-country", countryName);
           }
         });
     });
@@ -112,8 +133,8 @@ onMounted(() => {
   world.controls().autoRotate = false;
 
   // Handle resize
-  window.addEventListener('resize', onWindowResize);
-  window.addEventListener('mousemove', onMouseMove);
+  window.addEventListener("resize", onWindowResize);
+  window.addEventListener("mousemove", onMouseMove);
 });
 
 const onMouseMove = (event) => {
@@ -131,12 +152,12 @@ const onWindowResize = () => {
 };
 
 onUnmounted(() => {
-  window.removeEventListener('resize', onWindowResize);
-  window.removeEventListener('mousemove', onMouseMove);
+  window.removeEventListener("resize", onWindowResize);
+  window.removeEventListener("mousemove", onMouseMove);
   if (world) {
     world._destructor(); // Cleanup if available
     // Or clear container
-    if (container.value) container.value.innerHTML = '';
+    if (container.value) container.value.innerHTML = "";
   }
 });
 </script>
@@ -160,7 +181,7 @@ onUnmounted(() => {
   color: white;
   padding: 12px 16px;
   border-radius: 8px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   font-size: 14px;
   pointer-events: none;
   z-index: 1000;

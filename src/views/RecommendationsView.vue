@@ -1,11 +1,11 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
-import { useRoute } from "vue-router";
 import SongCard from "@/components/SongCard.vue";
 import { getSystemRecs, getCommunityRecs } from "@/api/recommendations.js";
 
-const route = useRoute();
-const country = computed(() => route.params.country || "Taiwan");
+const emit = defineEmits(["close"]);
+const props = defineProps({ country: { type: String, default: "Taiwan" } });
+const country = computed(() => props.country || "Taiwan");
 
 const ourPicks = ref([]);
 const communityPicks = ref([]);
@@ -17,7 +17,6 @@ onMounted(async () => {
   error.value = null;
 
   try {
-    // Fetch both system and community recommendations in parallel
     const [systemRecs, commRecs] = await Promise.all([
       getSystemRecs(country.value),
       getCommunityRecs(country.value),
@@ -34,48 +33,57 @@ onMounted(async () => {
     loading.value = false;
   }
 });
+
+function handleClose() {
+  emit("close");
+}
 </script>
 
 <template>
-  <div class="recommendations">
-    <div class="display-box">
-      <div class="title-container">
-        <!-- TODO: "Country" to be changed to country name that is passed in as a prop -->
-        <h1>{{ country }}</h1>
-      </div>
-      <div class="main-container">
-        <div class="panel-container">
-          <h1>Our Picks</h1>
-          <div class="song-container">
-            <SongCard
-              v-for="s in ourPicks"
-              :key="s.title"
-              :song-id="s._id || ''"
-              :title="s.title"
-              :artist="s.artist"
-              :genre="s.genre"
-              :language="s.language"
-              :youtube-url="s.youtubeUrl"
-              :country="country"
-              :rec-type="s.recType || 'System'"
-            />
-          </div>
+  <div class="modal-backdrop" @click.self="handleClose">
+    <div class="modal-panel">
+      <button class="close-btn" aria-label="Close" @click="handleClose">
+        ×
+      </button>
+      <div class="modal-content">
+        <div class="title-container">
+          <h1>{{ country }}</h1>
         </div>
-        <div class="panel-container">
-          <h1>Community Picks</h1>
-          <div class="song-container">
-            <SongCard
-              v-for="s in communityPicks"
-              :key="s.title"
-              :song-id="s._id || ''"
-              :title="s.title"
-              :artist="s.artist"
-              :genre="s.genre"
-              :language="s.language"
-              :youtube-url="s.youtubeUrl"
-              :country="country"
-              :rec-type="s.recType || 'Community'"
-            />
+        <div v-if="loading" class="loading">Loading recommendations…</div>
+        <div v-else class="main-container">
+          <div class="panel-container">
+            <h1>Our Picks</h1>
+            <div class="song-container">
+              <SongCard
+                v-for="s in ourPicks"
+                :key="s.title"
+                :song-id="s._id || ''"
+                :title="s.title"
+                :artist="s.artist"
+                :genre="s.genre"
+                :language="s.language"
+                :youtube-url="s.youtubeUrl"
+                :country="country"
+                :rec-type="s.recType || 'System'"
+              />
+            </div>
+          </div>
+          <div class="panel-container">
+            <h1>Community Picks</h1>
+            <div class="song-container">
+              <SongCard
+                v-for="s in communityPicks"
+                :key="s.title"
+                :song-id="s._id || ''"
+                :title="s.title"
+                :artist="s.artist"
+                :genre="s.genre"
+                :language="s.language"
+                :youtube-url="s.youtubeUrl"
+                :country="country"
+                :rec-type="s.recType || 'Community'"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -84,45 +92,61 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-/* temporary background */
-.recommendations {
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 100vh;
-  background: darkred;
+  z-index: 1000;
 }
-.display-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-  background: rgba(253, 254, 255, 0.8);
-  backdrop-filter: blur(12px);
-  padding: 1rem;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 15px 15px 40px -5px rgba(0, 0, 0, 0.3);
-  color: white;
-  text-align: center;
-  width: 70%;
-  height: 80%;
-  overflow: auto;
+
+.modal-panel {
+  position: relative;
+  width: min(1100px, 92vw);
+  max-height: 86vh;
+  background: #0b0b0b;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 24px;
+  line-height: 24px;
+  cursor: pointer;
+}
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.modal-content {
+  padding: 16px 20px 20px 20px;
+  color: #fff;
+  overflow-y: auto;
+  max-height: 86vh;
 }
 
 .title-container {
-  background-color: coral;
   display: flex;
-  padding: 0rem;
-  margin-bottom: 0rem;
-  gap: 0rem;
-  /* padding: 0.5rem; */
+  padding: 0;
+  margin-bottom: 8px;
+  gap: 0;
 }
 .title-container h1 {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 600;
   margin: 0;
   color: #38bdf8;
@@ -130,13 +154,11 @@ onMounted(async () => {
 }
 
 .main-container {
-  background-color: blue;
   display: flex;
   flex-direction: row;
   gap: 2rem;
-  /* align-items: center; */
   justify-content: space-around;
-  padding: 0rem 1rem 1rem;
+  padding: 0rem 0.5rem 0.5rem;
   flex: 1;
   max-width: 100%;
   width: 100%;
@@ -146,18 +168,16 @@ onMounted(async () => {
 }
 
 .panel-container {
-  background-color: green;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: start;
   gap: 1rem;
-  padding: 0rem 1rem 1rem;
+  padding: 0rem 0.5rem 0.5rem;
   flex: 1;
 }
 .panel-container h1 {
-  /* font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; */
-  font-size: 2rem;
+  font-size: 1.4rem;
   font-weight: 600;
   margin: 0;
   color: #38bdf8;
@@ -165,7 +185,6 @@ onMounted(async () => {
 }
 
 .song-container {
-  /* background-color: lightseagreen; */
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -176,27 +195,22 @@ onMounted(async () => {
   max-width: 100%;
 }
 
-/* Webkit browsers */
 .song-container::-webkit-scrollbar {
-  width: 6px; /* width of scrollbar */
+  width: 6px;
 }
-
 .song-container::-webkit-scrollbar-track {
-  background: transparent; /* hide the track */
+  background: transparent;
 }
-
 .song-container::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.25); /* simple thumb */
+  background: rgba(255, 255, 255, 0.25);
   border-radius: 4px;
 }
-
-/* Thumb hover effect */
 .song-container::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(255, 255, 255, 0.4);
 }
 
-/* Remove arrows */
-.song-container::-webkit-scrollbar-button {
-  display: none;
+.loading {
+  padding: 8px;
+  color: #ddd;
 }
 </style>
