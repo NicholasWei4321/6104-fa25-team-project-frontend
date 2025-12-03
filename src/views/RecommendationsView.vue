@@ -20,14 +20,14 @@ onMounted(async () => {
     // Fetch both system and community recommendations in parallel
     const [systemRecs, commRecs] = await Promise.all([
       getSystemRecs(country.value),
-      getCommunityRecs(country.value)
+      getCommunityRecs(country.value),
     ]);
 
     ourPicks.value = systemRecs || [];
     communityPicks.value = commRecs || [];
   } catch (e) {
-    console.error('Failed to fetch recommendations', e);
-    error.value = 'Failed to load recommendations';
+    console.error("Failed to fetch recommendations", e);
+    error.value = "Failed to load recommendations";
     ourPicks.value = [];
     communityPicks.value = [];
   } finally {
@@ -115,6 +115,9 @@ onMounted(async () => {
 .title-container {
   background-color: coral;
   display: flex;
+  padding: 0rem;
+  margin-bottom: 0rem;
+  gap: 0rem;
   /* padding: 0.5rem; */
 }
 .title-container h1 {
@@ -133,7 +136,7 @@ onMounted(async () => {
   gap: 2rem;
   /* align-items: center; */
   justify-content: space-around;
-  padding: 1rem;
+  padding: 0rem 1rem 1rem;
   flex: 1;
   max-width: 100%;
   width: 100%;
@@ -149,7 +152,7 @@ onMounted(async () => {
   align-items: center;
   justify-content: start;
   gap: 1rem;
-  padding: 1rem;
+  padding: 0rem 1rem 1rem;
   flex: 1;
 }
 .panel-container h1 {
@@ -157,12 +160,12 @@ onMounted(async () => {
   font-size: 2rem;
   font-weight: 600;
   margin: 0;
-  color: white;
+  color: #38bdf8;
   letter-spacing: 0.05em;
 }
 
 .song-container {
-  background-color: lightseagreen;
+  /* background-color: lightseagreen; */
   display: flex;
   flex-direction: column;
   gap: 1rem;

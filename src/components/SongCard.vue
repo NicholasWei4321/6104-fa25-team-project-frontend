@@ -6,7 +6,7 @@
       </div>
 
       <div class="song-card__content">
-        <h3 class="song-card__title">{{ title }}</h3>
+        <p class="song-card__title">{{ title }}</p>
         <p class="song-card__artist">{{ artist }}</p>
 
         <div class="song-card__meta">
@@ -14,6 +14,14 @@
           <span class="song-card__lang">{{ language }}</span>
         </div>
       </div>
+
+      <button
+        class="song-card__flag-btn"
+        @click.stop="handleFlag"
+        title="Report song"
+      >
+        <font-awesome-icon :icon="['fas', 'flag']" />
+      </button>
     </div>
 
     <!-- <div class="song-card__footer">
@@ -34,9 +42,11 @@
   </div>
 </template>
 
+
 <script>
-import { useAuthStore } from '@/stores/auth.js';
-import { logExploration } from '@/api/passport.js';
+import { useAuthStore } from "@/stores/auth.js";
+import { logExploration } from "@/api/passport.js";
+import { reportObject } from "@/api/reporting.js";
 
 export default {
   name: "SongCard",
@@ -85,8 +95,26 @@ export default {
             await logExploration(authStore.user, songObject, this.country);
           }
         } catch (error) {
-          console.error('Failed to log exploration:', error);
+          console.error("Failed to log exploration:", error);
         }
+      }
+    },
+    async handleFlag() {
+      try {
+        const authStore = useAuthStore();
+        if (!authStore.user) {
+          alert("You must be logged in to report a song.");
+          return;
+        }
+        const result = await reportObject(this.songId, authStore.user);
+        if (result && result.error) {
+          alert(`Could not report: ${result.error}`);
+        } else {
+          alert("Thank you for reporting this song.");
+        }
+      } catch (error) {
+        console.error("Failed to report song:", error);
+        alert("Failed to report song. Please try again later.");
       }
     },
     extractVideoId(url) {
@@ -132,6 +160,22 @@ export default {
   align-items: center;
   gap: 0.75rem;
   cursor: pointer;
+  position: relative;
+}
+.song-card__flag-btn {
+  position: absolute;
+  top: -0.25rem;
+  right: 0;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0.25rem;
+  font-size: 1rem;
+  transition: color 0.2s ease;
+}
+.song-card__flag-btn:hover {
+  color: #ef4444;
 }
 .song-card__icon {
   background: linear-gradient(135deg, #7c3aed, #2563eb);
@@ -156,6 +200,7 @@ export default {
 }
 .song-card__title {
   margin: 0;
+  text-align: left;
   font-size: 1rem;
   font-weight: 600;
   color: var(--color-heading);
