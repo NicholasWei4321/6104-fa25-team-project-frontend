@@ -28,9 +28,29 @@
         class="song-card__add-btn"
         @click.stop="handleAdd"
         title="Add to playlist"
+        ref="addBtnRef"
       >
         <font-awesome-icon :icon="['fas', 'plus']" />
       </button>
+      <!-- Playlist selection popup anchored to + button -->
+      <div v-if="showPlaylistPopup" class="playlist-popup" ref="popupRef">
+        <div class="playlist-popup__header">Add to playlist</div>
+        <div class="playlist-popup__list">
+          <template v-if="playlistItems.length">
+            <div
+              v-for="p in playlistItems"
+              :key="p.playlist"
+              class="playlist-popup__item"
+              @click.stop="addToPlaylist(p.playlist)"
+            >
+              <span>{{ p.name }}</span>
+            </div>
+          </template>
+          <div v-else class="playlist-popup__empty">
+            No playlists yet. Create one in the Playlist tab.
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- <div class="song-card__footer">
@@ -53,6 +73,7 @@
 
 <script>
 import { useAuthStore } from "@/stores/auth.js";
+import { usePlaylistStore } from "@/stores/playlist.js";
 import { logExploration } from "@/api/passport.js";
 import { reportObject } from "@/api/reporting.js";
 
@@ -71,6 +92,9 @@ export default {
   data() {
     return {
       isExpanded: false,
+      showPlaylistPopup: false,
+      popupRef: null,
+      addBtnRef: null,
     };
   },
   computed: {
@@ -78,6 +102,10 @@ export default {
       // Extract video ID from various YouTube URL formats
       const videoId = this.extractVideoId(this.youtubeUrl);
       return `https://www.youtube.com/embed/${videoId}`;
+    },
+    playlistItems() {
+      const playlistStore = usePlaylistStore();
+      return playlistStore.playlists || [];
     },
   },
   methods: {
@@ -126,9 +154,41 @@ export default {
       }
     },
     handleAdd() {
-      // Placeholder handler for the + button
-      // Integrate with playlist/add flow if available
-      alert("Added to your playlist (placeholder). ");
+      // Toggle popup and ensure playlists loaded
+      const authStore = useAuthStore();
+      if (!authStore.user) {
+        alert("You must be logged in to add to a playlist.");
+        return;
+      }
+      const playlistStore = usePlaylistStore();
+      if (!playlistStore.playlists || playlistStore.playlists.length === 0) {
+        // Fetch playlists for the logged-in user (pass full user object)
+        playlistStore.fetchPlaylists(authStore.user).catch(() => {});
+      }
+      this.showPlaylistPopup = !this.showPlaylistPopup;
+    },
+    async addToPlaylist(playlistId) {
+      try {
+        const playlistStore = usePlaylistStore();
+        await playlistStore.addSong(playlistId, this.songId);
+        this.showPlaylistPopup = false;
+        alert("Song added to playlist.");
+      } catch (e) {
+        alert("Failed to add song to playlist.");
+      }
+    },
+    mounted() {
+      // Close popup when clicking outside
+      this._outsideClickHandler = (e) => {
+        if (!this.showPlaylistPopup) return;
+        const popupEl = this.$refs.popupRef;
+        const btnEl = this.$refs.addBtnRef;
+        if (popupEl && (popupEl === e.target || popupEl.contains(e.target)))
+          return;
+        if (btnEl && (btnEl === e.target || btnEl.contains(e.target))) return;
+        this.showPlaylistPopup = false;
+      };
+      document.addEventListener("click", this._outsideClickHandler);
     },
     extractVideoId(url) {
       // Handle youtube.com/watch?v=ID
@@ -146,6 +206,21 @@ export default {
       // Fallback: return the url as-is
       return url;
     },
+  },
+  mounted() {
+    // Close popup when clicking outside
+    this._outsideClickHandler = (e) => {
+      if (!this.showPlaylistPopup) return;
+      const popupEl = this.$refs.popupRef;
+      const btnEl = this.$refs.addBtnRef;
+      if (popupEl && (popupEl === e.target || popupEl.contains(e.target))) return;
+      if (btnEl && (btnEl === e.target || btnEl.contains(e.target))) return;
+      this.showPlaylistPopup = false;
+    };
+    document.addEventListener("click", this._outsideClickHandler, true);
+  },
+  unmounted() {
+    document.removeEventListener("click", this._outsideClickHandler, true);
   },
 };
 </script>
@@ -281,6 +356,44 @@ export default {
 }
 .song-card__video {
   margin: 0.5rem 0;
+}
+.playlist-popup {
+  position: absolute;
+  top: 4rem; /* directly below the + button */
+  right: 0;
+  width: 220px;
+  max-height: 240px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  z-index: 10;
+}
+.playlist-popup__header {
+  padding: 0.5rem 0.75rem;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 1px solid #f3f4f6;
+}
+.playlist-popup__list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+.playlist-popup__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  color: #374151;
+}
+.playlist-popup__item:hover {
+  background: #f9fafb;
+}
+.playlist-popup__empty {
+  padding: 0.75rem;
+  color: #6b7280;
 }
 .video-container {
   position: relative;
