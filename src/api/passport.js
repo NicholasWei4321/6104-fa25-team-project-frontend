@@ -46,3 +46,40 @@ export const getHistoryForCountry = async (userId, country) => {
     return [];
   }
 };
+
+/**
+ * Get all song history for a user across all countries
+ * @param {string} userId - User ID
+ * @returns {Promise<Array>} Array of unique songs from user's history
+ */
+export const getAllSongHistory = async (userId) => {
+  if (!userId) return [];
+  try {
+    // Get all explored countries first
+    const countries = await getExploredCountries(userId);
+
+    // Fetch history for each country
+    const allHistoryPromises = countries.map(c =>
+      getHistoryForCountry(userId, c.country)
+    );
+    const allHistory = await Promise.all(allHistoryPromises);
+
+    // Flatten and deduplicate songs
+    const allSongs = allHistory.flat();
+    const uniqueSongs = [];
+    const seenSongIds = new Set();
+
+    for (const item of allSongs) {
+      const song = item.entry?.song || item.song;
+      if (song && song._id && !seenSongIds.has(song._id)) {
+        seenSongIds.add(song._id);
+        uniqueSongs.push(song);
+      }
+    }
+
+    return uniqueSongs;
+  } catch (error) {
+    console.error('Failed to fetch all song history:', error);
+    return [];
+  }
+};
