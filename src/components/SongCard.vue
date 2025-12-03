@@ -22,6 +22,15 @@
       >
         <font-awesome-icon :icon="['fas', 'flag']" />
       </button>
+
+      <button
+        v-if="isExpanded"
+        class="song-card__add-btn"
+        @click.stop="handleAdd"
+        title="Add to playlist"
+      >
+        <font-awesome-icon :icon="['fas', 'plus']" />
+      </button>
     </div>
 
     <!-- <div class="song-card__footer">
@@ -41,7 +50,6 @@
     </div>
   </div>
 </template>
-
 
 <script>
 import { useAuthStore } from "@/stores/auth.js";
@@ -117,6 +125,11 @@ export default {
         alert("Failed to report song. Please try again later.");
       }
     },
+    handleAdd() {
+      // Placeholder handler for the + button
+      // Integrate with playlist/add flow if available
+      alert("Added to your playlist (placeholder). ");
+    },
     extractVideoId(url) {
       // Handle youtube.com/watch?v=ID
       const watchMatch = url.match(/[?&]v=([^&]+)/);
@@ -176,6 +189,30 @@ export default {
 }
 .song-card__flag-btn:hover {
   color: #ef4444;
+}
+.song-card__add-btn {
+  position: absolute;
+  top: 2rem; /* appears underneath the flag button */
+  right: 0;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 9999px; /* circle */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+.song-card__add-btn:hover {
+  color: #10b981; /* green tint on hover */
+  border-color: #d1fae5;
+  background: #f0fdf4;
 }
 .song-card__icon {
   background: linear-gradient(135deg, #7c3aed, #2563eb);
