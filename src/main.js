@@ -8,10 +8,10 @@ import router from './router'
 
 // Font Awesome
 import { library } from '@fortawesome/fontawesome-svg-core'
-import { faMusic, faGlobe, faLanguage, faPassport, faPen, faTrash } from '@fortawesome/free-solid-svg-icons'
+import { faMusic, faGlobe, faLanguage, faPassport, faPen, faTrash, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
-library.add(faMusic, faGlobe, faLanguage, faPassport, faPen, faTrash)
+library.add(faMusic, faGlobe, faLanguage, faPassport, faPen, faTrash, faTriangleExclamation)
 
 const app = createApp(App)
 

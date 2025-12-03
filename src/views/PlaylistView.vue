@@ -28,6 +28,11 @@ const songHistory = ref([]);
 const searchQuery = ref('');
 const loadingHistory = ref(false);
 
+// Confirmation modal state
+const showConfirmModal = ref(false);
+const confirmMessage = ref('');
+const confirmAction = ref(null);
+
 // Computed
 const sortedPlaylists = computed(() => {
   return [...playlistStore.playlists].sort((a, b) => a.name.localeCompare(b.name));
@@ -44,6 +49,11 @@ const filteredSongHistory = computed(() => {
     return title.includes(query) || artist.includes(query) || country.includes(query);
   });
 });
+
+// Helper function to check if a song is an object with details or just an ID
+const isSongObject = (song) => {
+  return typeof song === 'object' && song !== null && song.songTitle;
+};
 
 // Lifecycle
 onMounted(async () => {
@@ -74,13 +84,13 @@ async function loadPlaylists() {
     console.log('Number of playlists:', playlistStore.playlists.length);
   } catch (error) {
     console.error('Error loading playlists:', error);
-    alert('Failed to load playlists: ' + (error.response?.data?.error || error.message));
+    showConfirmation('Failed to load playlists: ' + (error.response?.data?.error || error.message), null);
   }
 }
 
 async function handleCreatePlaylist() {
   if (!newPlaylistName.value.trim()) {
-    alert('Please enter a playlist name');
+    showConfirmation('Please enter a playlist name', null);
     return;
   }
 
@@ -89,23 +99,28 @@ async function handleCreatePlaylist() {
     newPlaylistName.value = '';
     showCreateModal.value = false;
   } catch (error) {
-    alert(playlistStore.error || 'Failed to create playlist');
+    showConfirmation(playlistStore.error || 'Failed to create playlist', null);
   }
 }
 
-async function handleDeletePlaylist(playlistId) {
-  if (!confirm('Are you sure you want to delete this playlist?')) {
-    return;
-  }
-
-  try {
-    await playlistStore.deletePlaylist(playlistId);
-    if (selectedPlaylist.value === playlistId) {
-      selectedPlaylist.value = null;
+function handleDeletePlaylist(playlistId) {
+  showConfirmation(
+    'Are you sure you want to delete this playlist?',
+    async () => {
+      try {
+        await playlistStore.deletePlaylist(playlistId);
+        if (selectedPlaylist.value === playlistId) {
+          selectedPlaylist.value = null;
+        }
+      } catch (error) {
+        // Show error in confirmation modal
+        showConfirmation(
+          playlistStore.error || 'Failed to delete playlist',
+          null
+        );
+      }
     }
-  } catch (error) {
-    alert(playlistStore.error || 'Failed to delete playlist');
-  }
+  );
 }
 
 function openRenameModal(playlist) {
@@ -116,7 +131,7 @@ function openRenameModal(playlist) {
 
 async function handleRenamePlaylist() {
   if (!renamePlaylistName.value.trim()) {
-    alert('Please enter a new playlist name');
+    showConfirmation('Please enter a new playlist name', null);
     return;
   }
 
@@ -126,7 +141,7 @@ async function handleRenamePlaylist() {
     playlistToRename.value = null;
     renamePlaylistName.value = '';
   } catch (error) {
-    alert(playlistStore.error || 'Failed to rename playlist');
+    showConfirmation(playlistStore.error || 'Failed to rename playlist', null);
   }
 }
 
@@ -135,7 +150,7 @@ async function selectPlaylist(playlistId) {
   try {
     await playlistStore.fetchPlaylistDetails(playlistId);
   } catch (error) {
-    alert('Failed to load playlist details');
+    showConfirmation('Failed to load playlist details', null);
   }
 }
 
@@ -166,7 +181,7 @@ async function loadSongHistory() {
 
 async function handleAddSong() {
   if (!newSongId.value.trim()) {
-    alert('Please enter a song ID');
+    showConfirmation('Please enter a song ID', null);
     return;
   }
 
@@ -175,31 +190,37 @@ async function handleAddSong() {
     newSongId.value = '';
     showAddSongModal.value = false;
   } catch (error) {
-    alert(playlistStore.error || 'Failed to add song');
+    showConfirmation(playlistStore.error || 'Failed to add song', null);
   }
 }
 
 async function addSongFromHistory(song) {
-  if (!selectedPlaylist.value || !song._id) return;
+  if (!selectedPlaylist.value || !song) return;
 
   try {
-    await playlistStore.addSong(selectedPlaylist.value, song._id);
+    // Store the entire song object instead of just the ID
+    await playlistStore.addSong(selectedPlaylist.value, song);
     showAddSongModal.value = false;
   } catch (error) {
-    alert(playlistStore.error || 'Failed to add song');
+    showConfirmation(playlistStore.error || 'Failed to add song', null);
   }
 }
 
-async function handleRemoveSong(songId) {
-  if (!confirm('Remove this song from the playlist?')) {
-    return;
-  }
-
-  try {
-    await playlistStore.removeSong(selectedPlaylist.value, songId);
-  } catch (error) {
-    alert(playlistStore.error || 'Failed to remove song');
-  }
+function handleRemoveSong(songId) {
+  showConfirmation(
+    'Remove this song from the playlist?',
+    async () => {
+      try {
+        await playlistStore.removeSong(selectedPlaylist.value, songId);
+      } catch (error) {
+        // Show error in confirmation modal
+        showConfirmation(
+          playlistStore.error || 'Failed to remove song',
+          null
+        );
+      }
+    }
+  );
 }
 
 // Drag and drop for reordering
@@ -269,7 +290,7 @@ async function handleDrop(event, dropIndex) {
     draggedSongIndex.value = null;
     isDraggingFromHandle.value = false;
   } catch (error) {
-    alert(playlistStore.error || 'Failed to reorder songs');
+    showConfirmation(playlistStore.error || 'Failed to reorder songs', null);
     draggedSongIndex.value = null;
     isDraggingFromHandle.value = false;
   }
@@ -279,6 +300,26 @@ function handleDragEnd() {
   draggedSongIndex.value = null;
   dropTargetIndex.value = null;
   isDraggingFromHandle.value = false;
+}
+
+// Confirmation modal methods
+function showConfirmation(message, action) {
+  confirmMessage.value = message;
+  confirmAction.value = action;
+  showConfirmModal.value = true;
+}
+
+function handleConfirm() {
+  if (confirmAction.value) {
+    confirmAction.value();
+  }
+  showConfirmModal.value = false;
+  confirmAction.value = null;
+}
+
+function handleCancel() {
+  showConfirmModal.value = false;
+  confirmAction.value = null;
 }
 
 // Navigation methods
@@ -395,8 +436,19 @@ function navigateToPassport() {
                 class="drag-handle"
                 @mousedown="handleDragHandleMouseDown"
               >⋮⋮</span>
-              <span class="song-id">{{ song }}</span>
-              <button @click="handleRemoveSong(song)" class="btn-remove" title="Remove">
+
+              <!-- Display song details if available, otherwise show ID -->
+              <div v-if="isSongObject(song)" class="song-details">
+                <div class="song-title-display">{{ song.songTitle }}</div>
+                <div class="song-meta-display">
+                  <span class="song-artist-display">{{ song.artist }}</span>
+                  <span class="meta-separator">•</span>
+                  <span class="song-country-display">{{ song.countryName }}</span>
+                </div>
+              </div>
+              <span v-else class="song-id">{{ song }}</span>
+
+              <button @click="handleRemoveSong(isSongObject(song) ? song._id : song)" class="btn-remove" title="Remove">
                 ✕
               </button>
             </li>
@@ -462,13 +514,13 @@ function navigateToPassport() {
           >
             Search
           </button>
-          <button
+          <!-- <button
             @click="activeTab = 'manual'"
             :class="{ active: activeTab === 'manual' }"
             class="tab-button"
           >
             Manual Entry
-          </button>
+          </button> -->
         </div>
 
         <!-- Tab Content -->
@@ -535,8 +587,8 @@ function navigateToPassport() {
             </div>
           </div>
 
-          <!-- Manual Entry Tab -->
-          <div v-if="activeTab === 'manual'" class="tab-content">
+          <!-- Manual Entry Tab (Hidden for now) -->
+          <!-- <div v-if="activeTab === 'manual'" class="tab-content">
             <label for="manual-song-id" class="input-label">Song ID</label>
             <input
               id="manual-song-id"
@@ -551,12 +603,27 @@ function navigateToPassport() {
               <button @click="showAddSongModal = false" class="btn-cancel">Cancel</button>
               <button @click="handleAddSong" class="btn-primary">Add Song</button>
             </div>
-          </div>
+          </div> -->
         </div>
 
-        <!-- Close button for History and Search tabs -->
-        <div v-if="activeTab !== 'manual'" class="modal-footer">
+        <!-- Close button -->
+        <div class="modal-footer">
           <button @click="showAddSongModal = false" class="btn-cancel">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div v-if="showConfirmModal" class="modal-overlay" @click="handleCancel">
+      <div class="modal modal-confirm" @click.stop>
+        <div class="confirm-icon">
+          <font-awesome-icon :icon="['fas', 'triangle-exclamation']" />
+        </div>
+        <p class="confirm-message">{{ confirmMessage }}</p>
+        <div class="modal-actions modal-actions-center">
+          <button @click="handleCancel" class="btn-cancel">Cancel</button>
+          <button v-if="confirmAction" @click="handleConfirm" class="btn-confirm">Confirm</button>
+          <button v-else @click="handleCancel" class="btn-primary">OK</button>
         </div>
       </div>
     </div>
@@ -901,6 +968,51 @@ function navigateToPassport() {
   color: #495057;
   font-size: 0.95rem;
   font-weight: 500;
+}
+
+/* Song details display */
+.song-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.song-title-display {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #212529;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.song-meta-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.song-artist-display {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta-separator {
+  color: #dee2e6;
+  flex-shrink: 0;
+}
+
+.song-country-display {
+  color: #3d5d7e;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-remove {
@@ -1267,6 +1379,46 @@ function navigateToPassport() {
 
 .song-list-modal::-webkit-scrollbar-thumb:hover {
   background: rgba(61, 93, 126, 0.5);
+}
+
+/* Confirmation Modal */
+.modal-confirm {
+  max-width: 400px;
+  text-align: center;
+}
+
+.confirm-icon {
+  font-size: 3.5rem;
+  margin-bottom: 1rem;
+  color: #feb503;
+}
+
+.confirm-message {
+  font-size: 1.1rem;
+  color: #495057;
+  margin: 0 0 2rem 0;
+  line-height: 1.5;
+}
+
+.modal-actions-center {
+  justify-content: flex-end;
+}
+
+.btn-confirm {
+  padding: 0.75rem 1.5rem;
+  background: #a94a66;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-confirm:hover {
+  background: #8d3d54;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(169, 74, 102, 0.4);
 }
 
 </style>
