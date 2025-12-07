@@ -16,6 +16,7 @@ const showSuggestForm = ref(false);
 const suggestLoading = ref(false);
 const suggestError = ref("");
 const suggestSuccess = ref("");
+const showNotification = ref(false);
 const suggestFields = ref({
   songTitle: "",
   artist: "",
@@ -60,6 +61,10 @@ async function submitSuggestion() {
       suggestError.value = res.error;
     } else {
       suggestSuccess.value = "Song suggestion submitted!";
+      showNotification.value = true;
+      setTimeout(() => {
+        showNotification.value = false;
+      }, 3000);
       closeSuggestForm();
     }
   } catch (e) {
@@ -134,7 +139,7 @@ function handleClose() {
                   <div class="suggest-card__icon">
                     <font-awesome-icon :icon="['fas', 'plus']" class="icon" />
                   </div>
-                  <h3 class="suggest-card__title">Your Recommendations</h3>
+                  <h3 class="suggest-card__title">Suggest a song!</h3>
                 </div>
                 <form class="suggest-form" @submit.prevent="submitSuggestion">
                   <input
@@ -208,6 +213,13 @@ function handleClose() {
       </div>
     </div>
   </div>
+
+  <!-- Notification Toast -->
+  <Transition name="fade-slide">
+    <div v-if="showNotification" class="notification-toast">
+      <p>Thank you for your suggestion!</p>
+    </div>
+  </Transition>
 </template>
 
 <style scoped>
@@ -465,5 +477,41 @@ function handleClose() {
 .submit-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Notification Toast */
+.notification-toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #7c3aed, #2563eb);
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.3);
+  z-index: 3000;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.notification-toast p {
+  margin: 0;
+}
+
+/* Fade and slide animations */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.3s ease;
+}
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateX(-50%) translateY(20px);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(20px);
 }
 </style>
