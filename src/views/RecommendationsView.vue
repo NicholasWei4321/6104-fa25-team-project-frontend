@@ -10,7 +10,64 @@ const country = computed(() => props.country || "Taiwan");
 const ourPicks = ref([]);
 const communityPicks = ref([]);
 const loading = ref(false);
+
 const error = ref(null);
+const showSuggestForm = ref(false);
+const suggestLoading = ref(false);
+const suggestError = ref("");
+const suggestSuccess = ref("");
+const suggestFields = ref({
+  songTitle: "",
+  artist: "",
+  language: "",
+  youtubeURL: "",
+  genre: "",
+});
+
+function handleSuggestClick() {
+  if (showSuggestForm.value) {
+    closeSuggestForm();
+  } else {
+    showSuggestForm.value = true;
+  }
+}
+
+function closeSuggestForm() {
+  showSuggestForm.value = false;
+  suggestError.value = "";
+  suggestSuccess.value = "";
+  suggestFields.value = {
+    songTitle: "",
+    artist: "",
+    language: "",
+    youtubeURL: "",
+    genre: "",
+  };
+}
+
+async function submitSuggestion() {
+  suggestLoading.value = true;
+  suggestError.value = "";
+  suggestSuccess.value = "";
+  try {
+    const res = await import("@/api/recommendations.js").then((m) =>
+      m.addCommunityRec({
+        countryName: country.value,
+        ...suggestFields.value,
+      })
+    );
+    if (res.error) {
+      suggestError.value = res.error;
+    } else {
+      suggestSuccess.value = "Song suggestion submitted!";
+      closeSuggestForm();
+    }
+  } catch (e) {
+    suggestError.value = "Failed to submit suggestion.";
+  } finally {
+    suggestLoading.value = false;
+  }
+}
 
 onMounted(async () => {
   loading.value = true;
@@ -71,6 +128,64 @@ function handleClose() {
           <div class="panel-container">
             <h1>Community Picks</h1>
             <div class="song-container">
+              <!-- Suggestion Form Card -->
+              <div v-if="showSuggestForm" class="suggest-card">
+                <div class="suggest-card__header">
+                  <div class="suggest-card__icon">
+                    <font-awesome-icon :icon="['fas', 'plus']" class="icon" />
+                  </div>
+                  <h3 class="suggest-card__title">Your Recommendations</h3>
+                </div>
+                <form class="suggest-form" @submit.prevent="submitSuggestion">
+                  <input
+                    v-model="suggestFields.songTitle"
+                    type="text"
+                    placeholder="Song Title"
+                    class="suggest-input"
+                    required
+                  />
+                  <input
+                    v-model="suggestFields.artist"
+                    type="text"
+                    placeholder="Artist"
+                    class="suggest-input"
+                    required
+                  />
+                  <input
+                    v-model="suggestFields.language"
+                    type="text"
+                    placeholder="Language"
+                    class="suggest-input"
+                    required
+                  />
+                  <input
+                    v-model="suggestFields.youtubeURL"
+                    type="text"
+                    placeholder="YouTube URL"
+                    class="suggest-input"
+                    required
+                  />
+                  <input
+                    v-model="suggestFields.genre"
+                    type="text"
+                    placeholder="Genre (optional)"
+                    class="suggest-input"
+                  />
+                  <button
+                    class="submit-btn"
+                    type="submit"
+                    :disabled="suggestLoading"
+                  >
+                    {{ suggestLoading ? "Submitting..." : "Submit" }}
+                  </button>
+                  <div v-if="suggestError" class="suggest-error">
+                    {{ suggestError }}
+                  </div>
+                  <div v-if="suggestSuccess" class="suggest-success">
+                    {{ suggestSuccess }}
+                  </div>
+                </form>
+              </div>
               <SongCard
                 v-for="s in communityPicks"
                 :key="s.title"
@@ -84,6 +199,10 @@ function handleClose() {
                 :rec-type="s.recType || 'Community'"
               />
             </div>
+
+            <button class="suggest-btn" @click="handleSuggestClick">
+              {{ showSuggestForm ? "Cancel" : "Suggest a Song" }}
+            </button>
           </div>
         </div>
       </div>
@@ -212,5 +331,139 @@ function handleClose() {
 .loading {
   padding: 8px;
   color: #ddd;
+}
+
+/* Suggestion Card Styles */
+.suggest-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: var(--color-background-soft);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.suggest-card__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.suggest-card__icon {
+  background: linear-gradient(135deg, #7c3aed, #2563eb);
+  color: white;
+  border-radius: 9999px;
+  padding: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.3);
+}
+
+.suggest-card__icon .icon {
+  width: 24px;
+  height: 24px;
+}
+
+.suggest-card__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-heading);
+}
+
+.suggest-error {
+  color: #ef4444;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.suggest-success {
+  color: #22c55e;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.suggest-btn {
+  margin-bottom: 0.5rem;
+  padding: 0.5rem 1.5rem;
+  background: linear-gradient(135deg, #7c3aed, #2563eb);
+  color: #fff;
+  border: none;
+  border-radius: 9999px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+}
+
+.suggest-btn:hover {
+  background: linear-gradient(135deg, #6d28d9, #1d4ed8);
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4);
+  transform: translateY(-1px);
+}
+
+.suggest-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 90%;
+  align-items: stretch;
+}
+
+.suggest-input {
+  padding: 0.6rem 0.85rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+  color: var(--color-text);
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.suggest-input:focus {
+  outline: none;
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+.suggest-input::placeholder {
+  color: var(--color-text);
+  opacity: 0.5;
+}
+
+.submit-btn {
+  padding: 0.6rem 1.2rem;
+  background: linear-gradient(135deg, #7c3aed, #2563eb);
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 0.25rem;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+  width: 50%;
+  align-self: center;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #6d28d9, #1d4ed8);
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.35);
+  transform: translateY(-1px);
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>
