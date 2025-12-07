@@ -50,9 +50,14 @@ const filteredSongHistory = computed(() => {
   });
 });
 
+// Get enriched playlist with full song details
+const enrichedPlaylist = computed(() => {
+  return playlistStore.enrichedCurrentPlaylist;
+});
+
 // Helper function to check if a song is an object with details or just an ID
 const isSongObject = (song) => {
-  return typeof song === 'object' && song !== null && song.songTitle;
+  return typeof song === 'object' && song !== null && (song.songTitle || song.title);
 };
 
 // Lifecycle
@@ -198,9 +203,12 @@ async function addSongFromHistory(song) {
   if (!selectedPlaylist.value || !song) return;
 
   try {
+    console.log('Adding song to playlist:', song);
     // Store the entire song object instead of just the ID
     await playlistStore.addSong(selectedPlaylist.value, song);
     showAddSongModal.value = false;
+    // Refresh the playlist to see the updated songs
+    await playlistStore.fetchPlaylistDetails(selectedPlaylist.value);
   } catch (error) {
     showConfirmation(playlistStore.error || 'Failed to add song', null);
   }
@@ -411,8 +419,8 @@ function navigateToPassport() {
 
           <ul v-else class="song-list" @dragleave="handleDragLeave">
             <li
-              v-for="(song, index) in playlistStore.currentPlaylist.songs"
-              :key="song + '_' + index"
+              v-for="(song, index) in enrichedPlaylist.songs"
+              :key="(isSongObject(song) ? song._id : song) + '_' + index"
               draggable="true"
               @dragstart="handleDragStart($event, index)"
               @dragover="handleDragOver($event, index)"
@@ -439,11 +447,11 @@ function navigateToPassport() {
 
               <!-- Display song details if available, otherwise show ID -->
               <div v-if="isSongObject(song)" class="song-details">
-                <div class="song-title-display">{{ song.songTitle }}</div>
+                <div class="song-title-display">{{ song.songTitle || song.title }}</div>
                 <div class="song-meta-display">
                   <span class="song-artist-display">{{ song.artist }}</span>
                   <span class="meta-separator">•</span>
-                  <span class="song-country-display">{{ song.countryName }}</span>
+                  <span class="song-country-display">{{ song.countryName || song.country }}</span>
                 </div>
               </div>
               <span v-else class="song-id">{{ song }}</span>

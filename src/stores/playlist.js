@@ -9,6 +9,9 @@ export const usePlaylistStore = defineStore('playlist', {
     // Currently selected/active playlist details
     currentPlaylist: null,
 
+    // Cache of song details by ID
+    songCache: {},
+
     // Loading states
     loading: false,
     loadingPlaylist: false,
@@ -30,6 +33,27 @@ export const usePlaylistStore = defineStore('playlist', {
      */
     hasCurrentPlaylistSongs: (state) => {
       return state.currentPlaylist?.songs?.length > 0;
+    },
+
+    /**
+     * Get song details from cache or return ID
+     */
+    getSongDetails: (state) => (songId) => {
+      return state.songCache[songId] || songId;
+    },
+
+    /**
+     * Get enriched current playlist with song details
+     */
+    enrichedCurrentPlaylist: (state) => {
+      if (!state.currentPlaylist) return null;
+
+      return {
+        ...state.currentPlaylist,
+        songs: state.currentPlaylist.songs.map(songId =>
+          state.songCache[songId] || songId
+        )
+      };
     },
   },
 
@@ -157,10 +181,20 @@ export const usePlaylistStore = defineStore('playlist', {
     /**
      * Add a song to a playlist
      */
-    async addSong(playlistId, songId) {
+    async addSong(playlistId, songOrId) {
       this.error = null;
 
       try {
+        // If songOrId is an object, cache it and extract the ID
+        let songId;
+        if (typeof songOrId === 'object' && songOrId !== null) {
+          songId = songOrId._id;
+          // Cache the full song object
+          this.songCache[songId] = songOrId;
+        } else {
+          songId = songOrId;
+        }
+
         await PlaylistAPI.addSong(playlistId, songId);
 
         // Update current playlist if it's loaded
