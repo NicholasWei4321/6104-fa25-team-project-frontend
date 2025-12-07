@@ -132,6 +132,33 @@ function handleSongReportError() {
     showNotification.value = false;
   }, 3000);
 }
+
+function handlePlaylistAdded() {
+  console.log("[Event] Playlist add notification triggered");
+  notificationMessage.value = "Song added to playlist.";
+  showNotification.value = true;
+  setTimeout(() => {
+    showNotification.value = false;
+  }, 3000);
+}
+
+function handlePlaylistAddError() {
+  console.log("[Event] Playlist add error notification triggered");
+  notificationMessage.value = "Failed to add song to playlist.";
+  showNotification.value = true;
+  setTimeout(() => {
+    showNotification.value = false;
+  }, 3000);
+}
+
+function handleSongAlreadyInPlaylist() {
+  console.log("[Event] Song already in playlist notification triggered");
+  notificationMessage.value = "Song already in playlist.";
+  showNotification.value = true;
+  setTimeout(() => {
+    showNotification.value = false;
+  }, 3000);
+}
 </script>
 
 <template>
@@ -163,6 +190,9 @@ function handleSongReportError() {
                 @song-reported="handleSongReported"
                 @song-already-reported="handleSongAlreadyReported"
                 @song-report-error="handleSongReportError"
+                @playlist-added="handlePlaylistAdded"
+                @playlist-add-error="handlePlaylistAddError"
+                @song-already-in-playlist="handleSongAlreadyInPlaylist"
               />
             </div>
           </div>
@@ -241,6 +271,9 @@ function handleSongReportError() {
                 @song-reported="handleSongReported"
                 @song-already-reported="handleSongAlreadyReported"
                 @song-report-error="handleSongReportError"
+                @playlist-added="handlePlaylistAdded"
+                @playlist-add-error="handlePlaylistAddError"
+                @song-already-in-playlist="handleSongAlreadyInPlaylist"
               />
             </div>
 

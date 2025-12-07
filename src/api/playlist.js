@@ -27,11 +27,13 @@ export async function getPlaylist(playlist) {
 
 /**
  * Create a new playlist
+ * @param {string} owner - User ID of the playlist owner
  * @param {string} name - Playlist name
  * @returns {Promise<{playlist: string}>}
  */
-export async function createPlaylist(name) {
+export async function createPlaylist(owner, name) {
   const response = await apiClient.post('/Playlist/createPlaylist', {
+    owner,
     name
   });
   return response.data;
@@ -40,11 +42,13 @@ export async function createPlaylist(name) {
 /**
  * Delete a playlist
  * @param {string} playlist - Playlist ID
+ * @param {string} user - User ID of the owner
  * @returns {Promise<void>}
  */
-export async function deletePlaylist(playlist) {
+export async function deletePlaylist(playlist, user) {
   const response = await apiClient.post('/Playlist/deletePlaylist', {
-    playlist
+    playlist,
+    user
   });
   return response.data;
 }
@@ -53,12 +57,14 @@ export async function deletePlaylist(playlist) {
  * Rename a playlist
  * @param {string} playlist - Playlist ID
  * @param {string} newName - New playlist name
+ * @param {string} user - User ID of the owner
  * @returns {Promise<void>}
  */
-export async function renamePlaylist(playlist, newName) {
+export async function renamePlaylist(playlist, newName, user) {
   const response = await apiClient.post('/Playlist/renamePlaylist', {
     playlist,
-    newName
+    newName,
+    user
   });
   return response.data;
 }
@@ -67,12 +73,14 @@ export async function renamePlaylist(playlist, newName) {
  * Add a song to a playlist
  * @param {string} playlist - Playlist ID
  * @param {string} song - Song ID
+ * @param {string} user - User ID of the owner
  * @returns {Promise<void>}
  */
-export async function addSong(playlist, song) {
+export async function addSong(playlist, song, user) {
   const response = await apiClient.post('/Playlist/addSong', {
     playlist,
-    song
+    song,
+    user
   });
   return response.data;
 }
@@ -81,12 +89,14 @@ export async function addSong(playlist, song) {
  * Remove a song from a playlist
  * @param {string} playlist - Playlist ID
  * @param {string} song - Song ID
+ * @param {string} user - User ID of the owner
  * @returns {Promise<void>}
  */
-export async function removeSong(playlist, song) {
+export async function removeSong(playlist, song, user) {
   const response = await apiClient.post('/Playlist/removeSong', {
     playlist,
-    song
+    song,
+    user
   });
   return response.data;
 }
@@ -95,12 +105,14 @@ export async function removeSong(playlist, song) {
  * Reorder songs in a playlist
  * @param {string} playlist - Playlist ID
  * @param {string[]} songs - New ordered array of song IDs
+ * @param {string} user - User ID of the owner
  * @returns {Promise<void>}
  */
-export async function reorderSongs(playlist, songs) {
+export async function reorderSongs(playlist, songs, user) {
   const response = await apiClient.post('/Playlist/reorderSongs', {
     playlist,
-    songs
+    songs,
+    user
   });
   return response.data;
 }

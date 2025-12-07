@@ -79,7 +79,14 @@ import { reportObject } from "@/api/reporting.js";
 
 export default {
   name: "SongCard",
-  emits: ["song-reported", "song-already-reported", "song-report-error"],
+  emits: [
+    "song-reported",
+    "song-already-reported",
+    "song-report-error",
+    "playlist-added",
+    "playlist-add-error",
+    "song-already-in-playlist",
+  ],
   props: {
     songId: { type: String, default: "" },
     title: { type: String, required: true },
@@ -199,9 +206,21 @@ export default {
         const playlistStore = usePlaylistStore();
         await playlistStore.addSong(playlistId, this.songId);
         this.showPlaylistPopup = false;
-        alert("Song added to playlist.");
+        this.$emit("playlist-added");
       } catch (e) {
-        alert("Failed to add song to playlist.");
+        const playlistStore = usePlaylistStore();
+        const errorMsg = playlistStore.error || "";
+        console.error(
+          "Error adding song:",
+          e,
+          "Store error:",
+          errorMsg
+        );
+        if (errorMsg.includes("DUPLICATE_SONG")) {
+          this.$emit("song-already-in-playlist");
+        } else {
+          this.$emit("playlist-add-error");
+        }
       }
     },
     mounted() {
