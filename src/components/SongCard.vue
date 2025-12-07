@@ -110,6 +110,7 @@ export default {
   },
   methods: {
     async toggleExpand() {
+      console.log('[Card Click] Song card clicked:', { title: this.title, artist: this.artist });
       this.isExpanded = !this.isExpanded;
 
       // Log exploration when card is expanded (clicked)
@@ -128,6 +129,7 @@ export default {
               recType: this.recType,
               genre: this.genre,
             };
+            console.log('[Action] Logging song exploration');
             await logExploration(authStore.user, songObject, this.country);
           }
         } catch (error) {
@@ -136,12 +138,14 @@ export default {
       }
     },
     async handleFlag() {
+      console.log('[Button Click] Flag/Report button clicked for song:', { title: this.title, artist: this.artist });
       try {
         const authStore = useAuthStore();
         if (!authStore.user) {
           alert("You must be logged in to report a song.");
           return;
         }
+        console.log('[Action] Reporting song:', this.songId);
         const result = await reportObject(this.songId, authStore.user);
         if (result && result.error) {
           alert(`Could not report: ${result.error}`);
@@ -154,6 +158,7 @@ export default {
       }
     },
     handleAdd() {
+      console.log('[Button Click] Add to playlist button clicked for song:', { title: this.title, artist: this.artist });
       // Toggle popup and ensure playlists loaded
       const authStore = useAuthStore();
       if (!authStore.user) {
@@ -168,7 +173,9 @@ export default {
       this.showPlaylistPopup = !this.showPlaylistPopup;
     },
     async addToPlaylist(playlistId) {
+      console.log('[Card Click] Playlist selected from popup:', { playlistId, song: this.title });
       try {
+        console.log('[Action] Adding song to playlist:', { songId: this.songId, playlistId });
         const playlistStore = usePlaylistStore();
         await playlistStore.addSong(playlistId, this.songId);
         this.showPlaylistPopup = false;

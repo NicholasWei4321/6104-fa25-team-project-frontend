@@ -26,6 +26,7 @@ const suggestFields = ref({
 });
 
 function handleSuggestClick() {
+  console.log("[Button Click] Suggest Song button clicked");
   if (showSuggestForm.value) {
     closeSuggestForm();
   } else {
@@ -34,6 +35,7 @@ function handleSuggestClick() {
 }
 
 function closeSuggestForm() {
+  console.log("[Button Click] Suggest form closed");
   showSuggestForm.value = false;
   suggestError.value = "";
   suggestSuccess.value = "";
@@ -47,10 +49,12 @@ function closeSuggestForm() {
 }
 
 async function submitSuggestion() {
+  console.log("[Button Click] Submit suggestion button clicked");
   suggestLoading.value = true;
   suggestError.value = "";
   suggestSuccess.value = "";
   try {
+    console.log("[Action] Submitting song suggestion:", suggestFields.value);
     const res = await import("@/api/recommendations.js").then((m) =>
       m.addCommunityRec({
         countryName: country.value,

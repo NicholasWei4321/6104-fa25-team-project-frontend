@@ -20,13 +20,21 @@ apiClient.interceptors.request.use((config) => {
       session: sessionToken,
     };
   }
+  // Log API request
+  console.log(`[API Request] ${config.method.toUpperCase()} ${config.url}`, config.data);
   return config;
 });
 
 // Add response interceptor to handle errors
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Log API response
+    console.log(`[API Response] ${response.status} ${response.config.url}`, response.data);
+    return response;
+  },
   (error) => {
+    // Log API error
+    console.error(`[API Error] ${error.config?.method?.toUpperCase() || 'REQUEST'} ${error.config?.url || 'Unknown URL'}`, error.response?.data || error.message);
     if (error.response?.data?.error === 'Invalid session token') {
       // Clear invalid session
       localStorage.removeItem('sessionToken');
