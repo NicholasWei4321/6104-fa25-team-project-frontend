@@ -79,6 +79,7 @@ import { reportObject } from "@/api/reporting.js";
 
 export default {
   name: "SongCard",
+  emits: ["song-reported", "song-already-reported", "song-report-error"],
   props: {
     songId: { type: String, default: "" },
     title: { type: String, required: true },
@@ -110,7 +111,10 @@ export default {
   },
   methods: {
     async toggleExpand() {
-      console.log('[Card Click] Song card clicked:', { title: this.title, artist: this.artist });
+      console.log("[Card Click] Song card clicked:", {
+        title: this.title,
+        artist: this.artist,
+      });
       this.isExpanded = !this.isExpanded;
 
       // Log exploration when card is expanded (clicked)
@@ -129,7 +133,7 @@ export default {
               recType: this.recType,
               genre: this.genre,
             };
-            console.log('[Action] Logging song exploration');
+            console.log("[Action] Logging song exploration");
             await logExploration(authStore.user, songObject, this.country);
           }
         } catch (error) {
@@ -138,19 +142,26 @@ export default {
       }
     },
     async handleFlag() {
-      console.log('[Button Click] Flag/Report button clicked for song:', { title: this.title, artist: this.artist });
+      console.log("[Button Click] Flag/Report button clicked for song:", {
+        title: this.title,
+        artist: this.artist,
+      });
       try {
         const authStore = useAuthStore();
         if (!authStore.user) {
           alert("You must be logged in to report a song.");
           return;
         }
-        console.log('[Action] Reporting song:', this.songId);
+        console.log("[Action] Reporting song:", this.songId);
         const result = await reportObject(this.songId, authStore.user);
         if (result && result.error) {
-          alert(`Could not report: ${result.error}`);
+          if (result.error.includes("already reported")) {
+            this.$emit("song-already-reported");
+          } else {
+            this.$emit("song-report-error");
+          }
         } else {
-          alert("Thank you for reporting this song.");
+          this.$emit("song-reported");
         }
       } catch (error) {
         console.error("Failed to report song:", error);
@@ -158,7 +169,10 @@ export default {
       }
     },
     handleAdd() {
-      console.log('[Button Click] Add to playlist button clicked for song:', { title: this.title, artist: this.artist });
+      console.log("[Button Click] Add to playlist button clicked for song:", {
+        title: this.title,
+        artist: this.artist,
+      });
       // Toggle popup and ensure playlists loaded
       const authStore = useAuthStore();
       if (!authStore.user) {
@@ -173,9 +187,15 @@ export default {
       this.showPlaylistPopup = !this.showPlaylistPopup;
     },
     async addToPlaylist(playlistId) {
-      console.log('[Card Click] Playlist selected from popup:', { playlistId, song: this.title });
+      console.log("[Card Click] Playlist selected from popup:", {
+        playlistId,
+        song: this.title,
+      });
       try {
-        console.log('[Action] Adding song to playlist:', { songId: this.songId, playlistId });
+        console.log("[Action] Adding song to playlist:", {
+          songId: this.songId,
+          playlistId,
+        });
         const playlistStore = usePlaylistStore();
         await playlistStore.addSong(playlistId, this.songId);
         this.showPlaylistPopup = false;
@@ -220,7 +240,8 @@ export default {
       if (!this.showPlaylistPopup) return;
       const popupEl = this.$refs.popupRef;
       const btnEl = this.$refs.addBtnRef;
-      if (popupEl && (popupEl === e.target || popupEl.contains(e.target))) return;
+      if (popupEl && (popupEl === e.target || popupEl.contains(e.target)))
+        return;
       if (btnEl && (btnEl === e.target || btnEl.contains(e.target))) return;
       this.showPlaylistPopup = false;
     };

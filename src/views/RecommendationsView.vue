@@ -17,6 +17,7 @@ const suggestLoading = ref(false);
 const suggestError = ref("");
 const suggestSuccess = ref("");
 const showNotification = ref(false);
+const notificationMessage = ref("");
 const suggestFields = ref({
   songTitle: "",
   artist: "",
@@ -65,6 +66,7 @@ async function submitSuggestion() {
       suggestError.value = res.error;
     } else {
       suggestSuccess.value = "Song suggestion submitted!";
+      notificationMessage.value = "Thank you for your suggestion!";
       showNotification.value = true;
       setTimeout(() => {
         showNotification.value = false;
@@ -103,6 +105,33 @@ onMounted(async () => {
 function handleClose() {
   emit("close");
 }
+
+function handleSongReported() {
+  console.log("[Event] Song reported notification triggered");
+  notificationMessage.value = "Thank you for reporting this song.";
+  showNotification.value = true;
+  setTimeout(() => {
+    showNotification.value = false;
+  }, 3000);
+}
+
+function handleSongAlreadyReported() {
+  console.log("[Event] Song already reported notification triggered");
+  notificationMessage.value = "You've already reported this song.";
+  showNotification.value = true;
+  setTimeout(() => {
+    showNotification.value = false;
+  }, 3000);
+}
+
+function handleSongReportError() {
+  console.log("[Event] Song report error notification triggered");
+  notificationMessage.value = "Error reporting song. Please try again later.";
+  showNotification.value = true;
+  setTimeout(() => {
+    showNotification.value = false;
+  }, 3000);
+}
 </script>
 
 <template>
@@ -122,7 +151,7 @@ function handleClose() {
             <div class="song-container">
               <SongCard
                 v-for="s in ourPicks"
-                :key="s.title"
+                :key="s._id"
                 :song-id="s._id || ''"
                 :title="s.title"
                 :artist="s.artist"
@@ -131,6 +160,9 @@ function handleClose() {
                 :youtube-url="s.youtubeUrl"
                 :country="country"
                 :rec-type="s.recType || 'System'"
+                @song-reported="handleSongReported"
+                @song-already-reported="handleSongAlreadyReported"
+                @song-report-error="handleSongReportError"
               />
             </div>
           </div>
@@ -197,7 +229,7 @@ function handleClose() {
               </div>
               <SongCard
                 v-for="s in communityPicks"
-                :key="s.title"
+                :key="s._id"
                 :song-id="s._id || ''"
                 :title="s.title"
                 :artist="s.artist"
@@ -206,6 +238,9 @@ function handleClose() {
                 :youtube-url="s.youtubeUrl"
                 :country="country"
                 :rec-type="s.recType || 'Community'"
+                @song-reported="handleSongReported"
+                @song-already-reported="handleSongAlreadyReported"
+                @song-report-error="handleSongReportError"
               />
             </div>
 
@@ -221,7 +256,7 @@ function handleClose() {
   <!-- Notification Toast -->
   <Transition name="fade-slide">
     <div v-if="showNotification" class="notification-toast">
-      <p>Thank you for your suggestion!</p>
+      <p>{{ notificationMessage }}</p>
     </div>
   </Transition>
 </template>
