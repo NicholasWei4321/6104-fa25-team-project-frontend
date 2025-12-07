@@ -13,6 +13,7 @@ function closeRecommendations() {
   showRecommendations.value = false;
 }
 function onCountrySelected(country) {
+  console.log("[Card Click] Country selected on globe:", country);
   selectedCountry.value = country || "Taiwan";
   showRecommendations.value = true;
 }

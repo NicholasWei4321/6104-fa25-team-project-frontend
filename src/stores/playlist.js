@@ -1,7 +1,23 @@
-import { defineStore } from 'pinia';
-import * as PlaylistAPI from '../api/playlist.js';
+import { defineStore } from "pinia";
+import * as PlaylistAPI from "../api/playlist.js";
+import { useAuthStore } from "./auth.js";
 
-export const usePlaylistStore = defineStore('playlist', {
+// Normalize song input to a song ID string before sending to the API
+const normalizeSongId = (song) => {
+  if (!song) return "";
+  if (typeof song === "string") return song;
+  if (typeof song === "object") {
+    return song._id || song.song || song.songId || "";
+  }
+  return "";
+};
+
+const requireUserId = () => {
+  const authStore = useAuthStore();
+  return authStore.user;
+};
+
+export const usePlaylistStore = defineStore("playlist", {
   state: () => ({
     // List of user's playlists: { playlist: string, name: string }[]
     playlists: [],
@@ -25,7 +41,7 @@ export const usePlaylistStore = defineStore('playlist', {
      * Get playlist by ID
      */
     getPlaylistById: (state) => (id) => {
-      return state.playlists.find(p => p.playlist === id);
+      return state.playlists.find((p) => p.playlist === id);
     },
 
     /**
@@ -69,8 +85,8 @@ export const usePlaylistStore = defineStore('playlist', {
         const playlists = await PlaylistAPI.getPlaylistsForUser(userId);
         this.playlists = playlists;
       } catch (error) {
-        this.error = error.response?.data?.error || 'Failed to fetch playlists';
-        console.error('Error fetching playlists:', error);
+        this.error = error.response?.data?.error || "Failed to fetch playlists";
+        console.error("Error fetching playlists:", error);
         throw error;
       } finally {
         this.loading = false;
@@ -89,8 +105,9 @@ export const usePlaylistStore = defineStore('playlist', {
         this.currentPlaylist = playlist;
         return playlist;
       } catch (error) {
-        this.error = error.response?.data?.error || 'Failed to fetch playlist details';
-        console.error('Error fetching playlist details:', error);
+        this.error =
+          error.response?.data?.error || "Failed to fetch playlist details";
+        console.error("Error fetching playlist details:", error);
         throw error;
       } finally {
         this.loadingPlaylist = false;
@@ -105,18 +122,24 @@ export const usePlaylistStore = defineStore('playlist', {
       this.error = null;
 
       try {
-        const result = await PlaylistAPI.createPlaylist(name);
+        const userId = requireUserId();
+        if (!userId) {
+          this.error = "Not authenticated";
+          throw new Error(this.error);
+        }
+
+        const result = await PlaylistAPI.createPlaylist(userId, name);
 
         // Add to local list
         this.playlists.push({
           playlist: result.playlist,
-          name: name
+          name: name,
         });
 
         return result;
       } catch (error) {
-        this.error = error.response?.data?.error || 'Failed to create playlist';
-        console.error('Error creating playlist:', error);
+        this.error = error.response?.data?.error || "Failed to create playlist";
+        console.error("Error creating playlist:", error);
         throw error;
       } finally {
         this.loading = false;
@@ -131,18 +154,26 @@ export const usePlaylistStore = defineStore('playlist', {
       this.error = null;
 
       try {
-        await PlaylistAPI.deletePlaylist(playlistId);
+        const userId = requireUserId();
+        if (!userId) {
+          this.error = "Not authenticated";
+          throw new Error(this.error);
+        }
+
+        await PlaylistAPI.deletePlaylist(playlistId, userId);
 
         // Remove from local list
-        this.playlists = this.playlists.filter(p => p.playlist !== playlistId);
+        this.playlists = this.playlists.filter(
+          (p) => p.playlist !== playlistId
+        );
 
         // Clear current playlist if it was deleted
         if (this.currentPlaylist?._id === playlistId) {
           this.currentPlaylist = null;
         }
       } catch (error) {
-        this.error = error.response?.data?.error || 'Failed to delete playlist';
-        console.error('Error deleting playlist:', error);
+        this.error = error.response?.data?.error || "Failed to delete playlist";
+        console.error("Error deleting playlist:", error);
         throw error;
       } finally {
         this.loading = false;
@@ -157,10 +188,16 @@ export const usePlaylistStore = defineStore('playlist', {
       this.error = null;
 
       try {
-        await PlaylistAPI.renamePlaylist(playlistId, newName);
+        const userId = requireUserId();
+        if (!userId) {
+          this.error = "Not authenticated";
+          throw new Error(this.error);
+        }
+
+        await PlaylistAPI.renamePlaylist(playlistId, newName, userId);
 
         // Update local list
-        const playlist = this.playlists.find(p => p.playlist === playlistId);
+        const playlist = this.playlists.find((p) => p.playlist === playlistId);
         if (playlist) {
           playlist.name = newName;
         }
@@ -170,8 +207,8 @@ export const usePlaylistStore = defineStore('playlist', {
           this.currentPlaylist.name = newName;
         }
       } catch (error) {
-        this.error = error.response?.data?.error || 'Failed to rename playlist';
-        console.error('Error renaming playlist:', error);
+        this.error = error.response?.data?.error || "Failed to rename playlist";
+        console.error("Error renaming playlist:", error);
         throw error;
       } finally {
         this.loading = false;
@@ -181,29 +218,45 @@ export const usePlaylistStore = defineStore('playlist', {
     /**
      * Add a song to a playlist
      */
-    async addSong(playlistId, songOrId) {
+    async addSong(playlistId, songId) {
       this.error = null;
 
       try {
-        // If songOrId is an object, cache it and extract the ID
-        let songId;
-        if (typeof songOrId === 'object' && songOrId !== null) {
-          songId = songOrId._id;
-          // Cache the full song object
-          this.songCache[songId] = songOrId;
-        } else {
-          songId = songOrId;
+        const userId = requireUserId();
+        if (!userId) {
+          this.error = "Not authenticated";
+          throw new Error(this.error);
         }
 
-        await PlaylistAPI.addSong(playlistId, songId);
+        const normalizedSongId = normalizeSongId(songId);
+        if (!normalizedSongId) {
+          this.error = "Invalid song id";
+          throw new Error(this.error);
+        }
+
+        const result = await PlaylistAPI.addSong(
+          playlistId,
+          normalizedSongId,
+          userId
+        );
+
+        // Check if backend returned an error (even as a 200 response)
+        if (result && result.error) {
+          this.error = result.error;
+          throw new Error(result.error);
+        }
 
         // Update current playlist if it's loaded
         if (this.currentPlaylist?._id === playlistId) {
-          this.currentPlaylist.songs.push(songId);
+          this.currentPlaylist.songs.push(normalizedSongId);
         }
       } catch (error) {
-        this.error = error.response?.data?.error || 'Failed to add song';
-        console.error('Error adding song:', error);
+        this.error =
+          this.error ||
+          error.response?.data?.error ||
+          error.message ||
+          "Failed to add song";
+        console.error("Error adding song:", error);
         throw error;
       }
     },
@@ -215,15 +268,29 @@ export const usePlaylistStore = defineStore('playlist', {
       this.error = null;
 
       try {
-        await PlaylistAPI.removeSong(playlistId, songId);
+        const userId = requireUserId();
+        if (!userId) {
+          this.error = "Not authenticated";
+          throw new Error(this.error);
+        }
+
+        const normalizedSongId = normalizeSongId(songId);
+        if (!normalizedSongId) {
+          this.error = "Invalid song id";
+          throw new Error(this.error);
+        }
+
+        await PlaylistAPI.removeSong(playlistId, normalizedSongId, userId);
 
         // Update current playlist if it's loaded
         if (this.currentPlaylist?._id === playlistId) {
-          this.currentPlaylist.songs = this.currentPlaylist.songs.filter(s => s !== songId);
+          this.currentPlaylist.songs = this.currentPlaylist.songs.filter(
+            (s) => s !== normalizedSongId
+          );
         }
       } catch (error) {
-        this.error = error.response?.data?.error || 'Failed to remove song';
-        console.error('Error removing song:', error);
+        this.error = error.response?.data?.error || "Failed to remove song";
+        console.error("Error removing song:", error);
         throw error;
       }
     },
@@ -235,15 +302,26 @@ export const usePlaylistStore = defineStore('playlist', {
       this.error = null;
 
       try {
-        await PlaylistAPI.reorderSongs(playlistId, newSongOrder);
+        const userId = requireUserId();
+        if (!userId) {
+          this.error = "Not authenticated";
+          throw new Error(this.error);
+        }
+
+        const normalizedSongOrder = newSongOrder.map(normalizeSongId);
+        if (normalizedSongOrder.some((id) => !id)) {
+          this.error = "Invalid song ids in reorder";
+          throw new Error(this.error);
+        }
+        await PlaylistAPI.reorderSongs(playlistId, normalizedSongOrder, userId);
 
         // Update current playlist if it's loaded
         if (this.currentPlaylist?._id === playlistId) {
-          this.currentPlaylist.songs = newSongOrder;
+          this.currentPlaylist.songs = normalizedSongOrder;
         }
       } catch (error) {
-        this.error = error.response?.data?.error || 'Failed to reorder songs';
-        console.error('Error reordering songs:', error);
+        this.error = error.response?.data?.error || "Failed to reorder songs";
+        console.error("Error reordering songs:", error);
         throw error;
       }
     },

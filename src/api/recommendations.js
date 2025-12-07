@@ -1,3 +1,20 @@
+/**
+ * Add a community recommendation for a given country
+ * @param {Object} params
+ * @param {string} params.countryName
+ * @param {string} params.songTitle
+ * @param {string} params.artist
+ * @param {string} params.language
+ * @param {string} params.youtubeURL
+ * @param {string} params.genre
+ * @returns {Promise<{recId: string} | {error: string}>}
+ */
+export async function addCommunityRec({ countryName, songTitle, artist, language, youtubeURL, genre }) {
+  const payload = { countryName, songTitle, artist, language, youtubeURL };
+  if (genre) payload.genre = genre;
+  const response = await apiClient.post('/CountryRecommendation/addCommunityRec', payload);
+  return response.data;
+}
 import apiClient from './client.js';
 
 /**

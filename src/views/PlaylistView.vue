@@ -94,12 +94,14 @@ async function loadPlaylists() {
 }
 
 async function handleCreatePlaylist() {
+  console.log('[Button Click] Create playlist button clicked');
   if (!newPlaylistName.value.trim()) {
     showConfirmation('Please enter a playlist name', null);
     return;
   }
 
   try {
+    console.log('[Action] Creating new playlist:', newPlaylistName.value);
     await playlistStore.createPlaylist(newPlaylistName.value);
     newPlaylistName.value = '';
     showCreateModal.value = false;
@@ -109,9 +111,11 @@ async function handleCreatePlaylist() {
 }
 
 function handleDeletePlaylist(playlistId) {
+  console.log('[Button Click] Delete playlist button clicked:', playlistId);
   showConfirmation(
     'Are you sure you want to delete this playlist?',
     async () => {
+      console.log('[Action] Deleting playlist:', playlistId);
       try {
         await playlistStore.deletePlaylist(playlistId);
         if (selectedPlaylist.value === playlistId) {
@@ -129,18 +133,21 @@ function handleDeletePlaylist(playlistId) {
 }
 
 function openRenameModal(playlist) {
+  console.log('[Button Click] Edit/Rename playlist button clicked:', playlist.name);
   playlistToRename.value = playlist.playlist;
   renamePlaylistName.value = playlist.name;
   showRenameModal.value = true;
 }
 
 async function handleRenamePlaylist() {
+  console.log('[Button Click] Rename playlist button clicked');
   if (!renamePlaylistName.value.trim()) {
     showConfirmation('Please enter a new playlist name', null);
     return;
   }
 
   try {
+    console.log('[Action] Renaming playlist to:', renamePlaylistName.value);
     await playlistStore.renamePlaylist(playlistToRename.value, renamePlaylistName.value);
     showRenameModal.value = false;
     playlistToRename.value = null;
@@ -151,8 +158,10 @@ async function handleRenamePlaylist() {
 }
 
 async function selectPlaylist(playlistId) {
+  console.log('[Card Click] Playlist selected:', playlistId);
   selectedPlaylist.value = playlistId;
   try {
+    console.log('[Action] Fetching playlist details');
     await playlistStore.fetchPlaylistDetails(playlistId);
   } catch (error) {
     showConfirmation('Failed to load playlist details', null);
@@ -160,6 +169,7 @@ async function selectPlaylist(playlistId) {
 }
 
 async function openAddSongModal() {
+  console.log('[Button Click] Add Song button clicked');
   showAddSongModal.value = true;
   activeTab.value = 'history';
   searchQuery.value = '';
@@ -185,12 +195,14 @@ async function loadSongHistory() {
 }
 
 async function handleAddSong() {
+  console.log('[Button Click] Add Song (manual ID) button clicked');
   if (!newSongId.value.trim()) {
     showConfirmation('Please enter a song ID', null);
     return;
   }
 
   try {
+    console.log('[Action] Adding song with ID:', newSongId.value);
     await playlistStore.addSong(selectedPlaylist.value, newSongId.value);
     newSongId.value = '';
     showAddSongModal.value = false;
@@ -200,10 +212,11 @@ async function handleAddSong() {
 }
 
 async function addSongFromHistory(song) {
+  console.log('[Card Click] Song selected from history:', { title: song.songTitle, artist: song.artist });
   if (!selectedPlaylist.value || !song) return;
 
   try {
-    console.log('Adding song to playlist:', song);
+    console.log('[Action] Adding song from history to playlist:', song);
     // Store the entire song object instead of just the ID
     await playlistStore.addSong(selectedPlaylist.value, song);
     showAddSongModal.value = false;
@@ -215,9 +228,11 @@ async function addSongFromHistory(song) {
 }
 
 function handleRemoveSong(songId) {
+  console.log('[Button Click] Remove song button clicked:', songId);
   showConfirmation(
     'Remove this song from the playlist?',
     async () => {
+      console.log('[Action] Removing song from playlist:', songId);
       try {
         await playlistStore.removeSong(selectedPlaylist.value, songId);
       } catch (error) {
@@ -233,10 +248,12 @@ function handleRemoveSong(songId) {
 
 // Drag and drop for reordering
 function handleDragHandleMouseDown(event) {
+  console.log('[Drag Start] Drag handle mouse down');
   isDraggingFromHandle.value = true;
 }
 
 function handleDragStart(event, index) {
+  console.log('[Drag Event] Drag start for song at index:', index);
   // Only allow drag if started from the drag handle
   if (!isDraggingFromHandle.value) {
     event.preventDefault();
@@ -276,6 +293,8 @@ async function handleDrop(event, dropIndex) {
   event.preventDefault();
   event.stopPropagation();
 
+  console.log('[Drag Event] Drop at index:', dropIndex);
+
   dropTargetIndex.value = null;
 
   if (draggedSongIndex.value === null || draggedSongIndex.value === dropIndex) {
@@ -294,6 +313,7 @@ async function handleDrop(event, dropIndex) {
   songs.splice(dropIndex, 0, draggedSong);
 
   try {
+    console.log('[Action] Reordering songs - moved from index', draggedSongIndex.value, 'to', dropIndex);
     await playlistStore.reorderSongs(selectedPlaylist.value, songs);
     draggedSongIndex.value = null;
     isDraggingFromHandle.value = false;
@@ -332,10 +352,12 @@ function handleCancel() {
 
 // Navigation methods
 function navigateToGlobe() {
+  console.log('[Button Click] Navigate to Globe view');
   router.push({ name: 'home' });
 }
 
 function navigateToPassport() {
+  console.log('[Button Click] Navigate to Passport/Profile view');
   router.push({ name: 'profile' });
 }
 </script>
