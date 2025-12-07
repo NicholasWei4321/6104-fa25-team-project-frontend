@@ -199,6 +199,25 @@ function handleSongAlreadyInPlaylist() {
           <div class="panel-container">
             <h1>Community Picks</h1>
             <div class="song-container">
+              <SongCard
+                v-for="s in communityPicks"
+                :key="s._id"
+                :song-id="s._id || ''"
+                :title="s.title"
+                :artist="s.artist"
+                :genre="s.genre"
+                :language="s.language"
+                :youtube-url="s.youtubeUrl"
+                :country="country"
+                :rec-type="s.recType || 'Community'"
+                @song-reported="handleSongReported"
+                @song-already-reported="handleSongAlreadyReported"
+                @song-report-error="handleSongReportError"
+                @playlist-added="handlePlaylistAdded"
+                @playlist-add-error="handlePlaylistAddError"
+                @song-already-in-playlist="handleSongAlreadyInPlaylist"
+              />
+
               <!-- Suggestion Form Card -->
               <div v-if="showSuggestForm" class="suggest-card">
                 <div class="suggest-card__header">
@@ -257,24 +276,6 @@ function handleSongAlreadyInPlaylist() {
                   </div>
                 </form>
               </div>
-              <SongCard
-                v-for="s in communityPicks"
-                :key="s._id"
-                :song-id="s._id || ''"
-                :title="s.title"
-                :artist="s.artist"
-                :genre="s.genre"
-                :language="s.language"
-                :youtube-url="s.youtubeUrl"
-                :country="country"
-                :rec-type="s.recType || 'Community'"
-                @song-reported="handleSongReported"
-                @song-already-reported="handleSongAlreadyReported"
-                @song-report-error="handleSongReportError"
-                @playlist-added="handlePlaylistAdded"
-                @playlist-add-error="handlePlaylistAddError"
-                @song-already-in-playlist="handleSongAlreadyInPlaylist"
-              />
             </div>
 
             <button class="suggest-btn" @click="handleSuggestClick">
