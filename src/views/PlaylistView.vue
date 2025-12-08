@@ -21,6 +21,7 @@ const newSongId = ref('');
 const draggedSongIndex = ref(null);
 const dropTargetIndex = ref(null);
 const isDraggingFromHandle = ref(false);
+const expandedSongIndex = ref(null); // Track which song is expanded for video playback
 
 // Add song modal state
 const activeTab = ref('history'); // 'history', 'search', 'manual'
@@ -350,6 +351,40 @@ function handleCancel() {
   confirmAction.value = null;
 }
 
+// Toggle song expansion to show/hide video
+function toggleSongExpansion(index) {
+  if (expandedSongIndex.value === index) {
+    expandedSongIndex.value = null; // Collapse if already expanded
+  } else {
+    expandedSongIndex.value = index; // Expand the clicked song
+  }
+}
+
+// Extract YouTube video ID from URL
+function extractVideoId(url) {
+  if (!url) return '';
+
+  // Handle youtube.com/watch?v=ID
+  const match1 = url.match(/[?&]v=([^&]+)/);
+  if (match1) return match1[1];
+
+  // Handle youtu.be/ID
+  const match2 = url.match(/youtu\.be\/([^?]+)/);
+  if (match2) return match2[1];
+
+  // Handle youtube.com/embed/ID
+  const match3 = url.match(/youtube\.com\/embed\/([^?]+)/);
+  if (match3) return match3[1];
+
+  return '';
+}
+
+// Get YouTube embed URL for a song
+function getEmbedUrl(song) {
+  const videoId = extractVideoId(song.youtubeURL);
+  return `https://www.youtube.com/embed/${videoId}`;
+}
+
 </script>
 
 <template>
@@ -442,25 +477,45 @@ function handleCancel() {
                 :class="{ 'drop-above': draggedSongIndex > index, 'drop-below': draggedSongIndex < index }"
               ></div>
 
-              <span
-                class="drag-handle"
-                @mousedown="handleDragHandleMouseDown"
-              >⋮⋮</span>
+              <div class="song-item-content">
+                <span
+                  class="drag-handle"
+                  @mousedown="handleDragHandleMouseDown"
+                >⋮⋮</span>
 
-              <!-- Display song details if available, otherwise show ID -->
-              <div v-if="isSongObject(song)" class="song-details">
-                <div class="song-title-display">{{ song.songTitle || song.title }}</div>
-                <div class="song-meta-display">
-                  <span class="song-artist-display">{{ song.artist }}</span>
-                  <span class="meta-separator">•</span>
-                  <span class="song-country-display">{{ song.countryName || song.country }}</span>
+                <!-- Display song details if available, otherwise show ID -->
+                <div
+                  v-if="isSongObject(song)"
+                  class="song-details"
+                  @click="toggleSongExpansion(index)"
+                  :class="{ expanded: expandedSongIndex === index }"
+                >
+                  <div class="song-title-display">{{ song.songTitle || song.title }}</div>
+                  <div class="song-meta-display">
+                    <span class="song-artist-display">{{ song.artist }}</span>
+                    <span class="meta-separator">•</span>
+                    <span class="song-country-display">{{ song.countryName || song.country }}</span>
+                  </div>
+                </div>
+                <span v-else class="song-id">{{ song }}</span>
+
+                <button @click.stop="handleRemoveSong(isSongObject(song) ? song._id : song)" class="btn-remove" title="Remove">
+                  ✕
+                </button>
+              </div>
+
+              <!-- Video player (shown when expanded) -->
+              <div v-if="isSongObject(song) && expandedSongIndex === index" class="song-video">
+                <div class="video-container">
+                  <iframe
+                    :src="getEmbedUrl(song)"
+                    :title="`${song.songTitle || song.title} - ${song.artist}`"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen
+                  ></iframe>
                 </div>
               </div>
-              <span v-else class="song-id">{{ song }}</span>
-
-              <button @click="handleRemoveSong(isSongObject(song) ? song._id : song)" class="btn-remove" title="Remove">
-                ✕
-              </button>
             </li>
           </ul>
         </div>
@@ -879,7 +934,7 @@ function handleCancel() {
 
 .song-item {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   padding: 1rem 1.25rem;
   background: #f8f9fa;
   border: 2px solid transparent;
@@ -888,6 +943,12 @@ function handleCancel() {
   transition: all 0.2s;
   user-select: none;
   position: relative;
+}
+
+.song-item-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
 }
 
 .song-item:hover {
@@ -960,6 +1021,16 @@ function handleCancel() {
   flex-direction: column;
   gap: 0.25rem;
   min-width: 0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.song-details:hover {
+  color: #3d5d7e;
+}
+
+.song-details.expanded {
+  color: #3d5d7e;
 }
 
 .song-title-display {
@@ -1013,6 +1084,33 @@ function handleCancel() {
 .btn-remove:hover {
   background: #8d3d54;
   transform: scale(1.05);
+}
+
+/* Video player in playlist */
+.song-video {
+  width: 100%;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #dee2e6;
+}
+
+.video-container {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  height: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #000;
+}
+
+.video-container iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
 }
 
 /* Modals */

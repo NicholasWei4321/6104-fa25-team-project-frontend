@@ -38,7 +38,7 @@ function onCountrySelected(country) {
 <style scoped>
 main {
   width: 100%;
-  height: 100vh;
+  height: calc(100vh - 60px); /* Account for navbar height */
   overflow: hidden;
   position: relative;
 }
