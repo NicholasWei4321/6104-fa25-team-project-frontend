@@ -60,15 +60,15 @@ export const usePlaylistStore = defineStore("playlist", {
 
     /**
      * Get enriched current playlist with song details
+     * Note: Songs are now returned as full objects from the backend,
+     * so this getter just passes them through
      */
     enrichedCurrentPlaylist: (state) => {
       if (!state.currentPlaylist) return null;
 
       return {
         ...state.currentPlaylist,
-        songs: state.currentPlaylist.songs.map(songId =>
-          state.songCache[songId] || songId
-        )
+        songs: state.currentPlaylist.songs
       };
     },
   },
@@ -246,9 +246,9 @@ export const usePlaylistStore = defineStore("playlist", {
           throw new Error(result.error);
         }
 
-        // Update current playlist if it's loaded
+        // Refresh the playlist to get the enriched song data
         if (this.currentPlaylist?._id === playlistId) {
-          this.currentPlaylist.songs.push(normalizedSongId);
+          await this.fetchPlaylistDetails(playlistId);
         }
       } catch (error) {
         this.error =
@@ -282,11 +282,9 @@ export const usePlaylistStore = defineStore("playlist", {
 
         await PlaylistAPI.removeSong(playlistId, normalizedSongId, userId);
 
-        // Update current playlist if it's loaded
+        // Refresh the playlist to get updated song list
         if (this.currentPlaylist?._id === playlistId) {
-          this.currentPlaylist.songs = this.currentPlaylist.songs.filter(
-            (s) => s !== normalizedSongId
-          );
+          await this.fetchPlaylistDetails(playlistId);
         }
       } catch (error) {
         this.error = error.response?.data?.error || "Failed to remove song";
@@ -315,9 +313,9 @@ export const usePlaylistStore = defineStore("playlist", {
         }
         await PlaylistAPI.reorderSongs(playlistId, normalizedSongOrder, userId);
 
-        // Update current playlist if it's loaded
+        // Refresh the playlist to get updated song order with full objects
         if (this.currentPlaylist?._id === playlistId) {
-          this.currentPlaylist.songs = normalizedSongOrder;
+          await this.fetchPlaylistDetails(playlistId);
         }
       } catch (error) {
         this.error = error.response?.data?.error || "Failed to reorder songs";
