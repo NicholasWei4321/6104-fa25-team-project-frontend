@@ -350,16 +350,6 @@ function handleCancel() {
   confirmAction.value = null;
 }
 
-// Navigation methods
-function navigateToGlobe() {
-  console.log('[Button Click] Navigate to Globe view');
-  router.push({ name: 'home' });
-}
-
-function navigateToPassport() {
-  console.log('[Button Click] Navigate to Passport/Profile view');
-  router.push({ name: 'profile' });
-}
 </script>
 
 <template>
@@ -370,16 +360,6 @@ function navigateToPassport() {
         <h1>My Playlists</h1>
       </div>
     </header>
-
-    <!-- Navigation Buttons -->
-    <div class="nav-buttons">
-      <button class="nav-fab" @click="navigateToGlobe" title="Globe">
-        <font-awesome-icon :icon="['fas', 'globe']" />
-      </button>
-      <button class="nav-fab" @click="navigateToPassport" title="My Passport">
-        <font-awesome-icon :icon="['fas', 'passport']" />
-      </button>
-    </div>
 
     <!-- Main content area -->
     <div class="content-container">
@@ -666,7 +646,7 @@ function navigateToPassport() {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: #000000;
+  background: #3d5d7e;
 }
 
 /* Header */
@@ -688,53 +668,12 @@ function navigateToPassport() {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Navigation Buttons */
-.nav-buttons {
-  position: fixed;
-  bottom: 24px;
-  left: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  z-index: 100;
-}
-
-.nav-fab {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: #3d5d7e;
-  color: #feb503;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-  transition: all 0.2s ease;
-}
-
-.nav-fab:hover {
-  background: #2d4d6e;
-  color: #ffc520;
-  transform: scale(1.1);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
-}
-
-.nav-fab:active {
-  transform: scale(0.95);
-}
-
 /* Content container */
 .content-container {
   display: flex;
   flex: 1;
   overflow: hidden;
-  margin-top: 2rem;
-  margin-right: 140px; /* Balanced spacing on right */
-  margin-bottom: 2rem;
-  margin-left: 140px; /* Leave space for nav buttons */
+  margin: 2rem;
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   background: white;
