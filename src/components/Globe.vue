@@ -38,6 +38,7 @@ const tooltip = ref({
 });
 
 let world;
+let countriesData = []; // Store countries data for random selection
 
 onMounted(() => {
   // Initialize Globe
@@ -89,10 +90,11 @@ onMounted(() => {
   )
     .then((res) => res.json())
     .then((countries) => {
+      // Store countries data for random selection
+      countriesData = countries.features.filter((d) => d.properties.ISO_A2 !== "AQ");
+
       world
-        .polygonsData(
-          countries.features.filter((d) => d.properties.ISO_A2 !== "AQ")
-        )
+        .polygonsData(countriesData)
         .polygonAltitude(0.01)
         .polygonCapColor(() => "rgba(0,0,0,0)")
         .polygonSideColor(() => "rgba(0,0,0,0)")
@@ -150,6 +152,46 @@ const onWindowResize = () => {
     world.height(window.innerHeight);
   }
 };
+
+// Function to select a random country and spin to it
+const selectRandomCountry = () => {
+  if (!countriesData || countriesData.length === 0 || !world) {
+    console.warn("Countries data not loaded yet");
+    return;
+  }
+
+  // Select a random country
+  const randomCountry = countriesData[Math.floor(Math.random() * countriesData.length)];
+  const countryName = randomCountry.properties.ADMIN;
+
+  // Get the center coordinates of the country
+  const bbox = randomCountry.geometry.coordinates;
+  let lat, lng;
+
+  // Calculate center from geometry
+  if (randomCountry.geometry.type === "Polygon") {
+    const coords = randomCountry.geometry.coordinates[0];
+    lng = coords.reduce((sum, c) => sum + c[0], 0) / coords.length;
+    lat = coords.reduce((sum, c) => sum + c[1], 0) / coords.length;
+  } else if (randomCountry.geometry.type === "MultiPolygon") {
+    const allCoords = randomCountry.geometry.coordinates.flat(2);
+    lng = allCoords.filter((_, i) => i % 2 === 0).reduce((sum, c) => sum + c, 0) / (allCoords.length / 2);
+    lat = allCoords.filter((_, i) => i % 2 === 1).reduce((sum, c) => sum + c, 0) / (allCoords.length / 2);
+  }
+
+  // Spin globe to the country
+  world.pointOfView({ lat, lng, altitude: 1.5 }, 2000); // 2 second animation
+
+  // Emit the country selection after the globe animation
+  setTimeout(() => {
+    emit("select-country", countryName);
+  }, 2000);
+};
+
+// Expose the function to parent component
+defineExpose({
+  selectRandomCountry
+});
 
 onUnmounted(() => {
   window.removeEventListener("resize", onWindowResize);
