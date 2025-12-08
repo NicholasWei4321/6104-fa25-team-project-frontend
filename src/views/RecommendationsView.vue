@@ -258,8 +258,9 @@ function handleSongAlreadyInPlaylist() {
                   <input
                     v-model="suggestFields.genre"
                     type="text"
-                    placeholder="Genre (optional)"
+                    placeholder="Genre"
                     class="suggest-input"
+                    required
                   />
                   <button
                     class="submit-btn"
