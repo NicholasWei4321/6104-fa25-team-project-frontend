@@ -364,22 +364,22 @@ function navigateToPassport() {
 
 <template>
   <div class="playlist-page">
-    <!-- Header with navigation -->
+    <!-- Header -->
     <header class="page-header">
       <div class="header-left">
         <h1>My Playlists</h1>
       </div>
-      <div class="header-nav">
-        <button @click="navigateToGlobe" class="nav-button">
-          <font-awesome-icon :icon="['fas', 'globe']" />
-          <span>Globe</span>
-        </button>
-        <button @click="navigateToPassport" class="nav-button">
-          <font-awesome-icon :icon="['fas', 'passport']" />
-          <span>Passport</span>
-        </button>
-      </div>
     </header>
+
+    <!-- Navigation Buttons -->
+    <div class="nav-buttons">
+      <button class="nav-fab" @click="navigateToGlobe" title="Globe">
+        <font-awesome-icon :icon="['fas', 'globe']" />
+      </button>
+      <button class="nav-fab" @click="navigateToPassport" title="My Passport">
+        <font-awesome-icon :icon="['fas', 'passport']" />
+      </button>
+    </div>
 
     <!-- Main content area -->
     <div class="content-container">
@@ -666,7 +666,7 @@ function navigateToPassport() {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: #3d5d7e;
+  background: #000000;
 }
 
 /* Header */
@@ -688,31 +688,42 @@ function navigateToPassport() {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.header-nav {
+/* Navigation Buttons */
+.nav-buttons {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
   display: flex;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 100;
 }
 
-.nav-button {
+.nav-fab {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #3d5d7e;
+  color: #feb503;
+  border: none;
+  cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1.25rem;
-  background: white;
-  border: 2px solid #3d5d7e;
-  border-radius: 8px;
-  color: #3d5d7e;
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: all 0.2s;
+  justify-content: center;
+  font-size: 24px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
 }
 
-.nav-button:hover {
-  background: #3d5d7e;
-  color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(61, 93, 126, 0.3);
+.nav-fab:hover {
+  background: #2d4d6e;
+  color: #ffc520;
+  transform: scale(1.1);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+.nav-fab:active {
+  transform: scale(0.95);
 }
 
 /* Content container */
@@ -720,7 +731,10 @@ function navigateToPassport() {
   display: flex;
   flex: 1;
   overflow: hidden;
-  margin: 2rem;
+  margin-top: 2rem;
+  margin-right: 140px; /* Balanced spacing on right */
+  margin-bottom: 2rem;
+  margin-left: 140px; /* Leave space for nav buttons */
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   background: white;

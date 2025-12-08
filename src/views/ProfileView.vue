@@ -1,10 +1,12 @@
 <script setup>
 import Globe from '../components/Globe.vue';
 import { onMounted, onUnmounted, ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
 import gsap from 'gsap';
 import { useAuthStore } from '../stores/auth.js';
 import { usePassportStore } from '../stores/passport.js';
 
+const router = useRouter();
 const authStore = useAuthStore();
 const passportStore = usePassportStore();
 const passportWrapper = ref(null);
@@ -284,12 +286,41 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown);
   document.removeEventListener('mousedown', handleClickOutside);
 });
+
+// Navigation methods
+function navigateToGlobe() {
+  router.push('/');
+}
+
+function navigateToPlaylists() {
+  router.push('/playlists');
+}
+
+async function handleLogout() {
+  await authStore.logout();
+  router.push('/login');
+}
 </script>
 
 <template>
   <div class="profile">
     <Globe />
-    
+
+    <!-- Logout Button -->
+    <button class="logout-button" @click="handleLogout" title="Logout">
+      Logout ({{ authStore.username }})
+    </button>
+
+    <!-- Navigation Buttons -->
+    <div class="nav-buttons">
+      <button class="nav-fab" @click="navigateToPlaylists" title="My Playlists">
+        <font-awesome-icon :icon="['fas', 'music']" />
+      </button>
+      <button class="nav-fab" @click="navigateToGlobe" title="Globe">
+        <font-awesome-icon :icon="['fas', 'globe']" />
+      </button>
+    </div>
+
     <div class="passport-stage">
       <div class="passport-wrapper" ref="passportWrapper">
         <div class="passport-search" ref="searchRef">
@@ -1013,5 +1044,68 @@ onUnmounted(() => {
   margin-top: 20px;
   text-transform: uppercase;
   font-size: 0.7rem;
+}
+
+/* Logout Button */
+.logout-button {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 0.625rem 1.25rem;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 100;
+  backdrop-filter: blur(4px);
+}
+
+.logout-button:hover {
+  background: rgba(169, 74, 102, 0.9);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Navigation Buttons */
+.nav-buttons {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 100;
+}
+
+.nav-fab {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #3d5d7e;
+  color: #feb503;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.nav-fab:hover {
+  background: #2d4d6e;
+  color: #ffc520;
+  transform: scale(1.1);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+.nav-fab:active {
+  transform: scale(0.95);
 }
 </style>
