@@ -16,7 +16,7 @@ const searchRef = ref(null);
 // -1 means book is closed (no sheets on left).
 // 0 means cover is open (Cover sheet is on left).
 // 1 means Page 1 is turned (Sheet 1 is on left).
-const currentSheetIndex = ref(-1); 
+const currentSheetIndex = ref(-1);
 const isAnimating = ref(false);
 
 const visaPages = computed(() =>
@@ -173,7 +173,7 @@ const turnPage = (direction) => {
     if (sheetToTurn >= totalSheets.value) return; // No more sheets
 
     isAnimating.value = true;
-    
+
     // Animate sheetToTurn from 0 to -180
     gsap.to(`.sheet-${sheetToTurn}`, {
       rotationY: -180,
@@ -186,7 +186,7 @@ const turnPage = (direction) => {
       onComplete: () => {
         currentSheetIndex.value = sheetToTurn;
         // Reset z-index logic to standard stacking
-        // We force a reactivity update or allow Vue to handle it, 
+        // We force a reactivity update or allow Vue to handle it,
         // but we might need to manually apply the new static z-index if Vue hasn't updated yet.
         isAnimating.value = false;
       }
@@ -275,7 +275,7 @@ onMounted(async () => {
   setTimeout(() => {
     turnPage('next');
   }, 800);
-  
+
   window.addEventListener('keydown', handleKeydown);
   document.addEventListener('mousedown', handleClickOutside);
 });
@@ -318,19 +318,19 @@ onUnmounted(() => {
           </div>
         </div>
         <div class="passport">
-        
+
         <!-- Sheets Loop -->
-        <div 
-          v-for="(n, index) in totalSheets" 
-          :key="index" 
+        <div
+          v-for="(n, index) in totalSheets"
+          :key="index"
           class="sheet"
           :class="`sheet-${index}`"
           :style="{ zIndex: getZIndex(index) }"
         >
-          
+
           <!-- FRONT FACE (Content when on RIGHT side) -->
           <div class="face front">
-            
+
             <!-- Sheet 0 Front: COVER -->
             <div v-if="index === 0" class="cover-design front-cover">
               <div class="gold-print">
@@ -356,14 +356,14 @@ onUnmounted(() => {
                 <span class="code">USA</span>
                 <span class="no">123456789</span>
               </div>
-              
+
               <div class="data-grid">
                 <div class="photo-area">
                   <div class="photo-box">
                     <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User Photo" />
                   </div>
                 </div>
-                
+
                 <div class="details">
                   <div class="field">
                     <label>Username</label>
@@ -381,7 +381,7 @@ onUnmounted(() => {
                   </div>
                 </div>
               </div>
-              
+
               <div class="mrz">
                 P&lt;USA{{ (authStore.username || 'TRAVELER').toUpperCase() }}&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;<br/>
                 1234567897USA0001018M301010&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;06
@@ -440,7 +440,7 @@ onUnmounted(() => {
 
           <!-- BACK FACE (Content when on LEFT side) -->
           <div class="face back">
-            
+
             <!-- Sheet 0 Back: INSIDE COVER -->
             <div v-if="index === 0" class="cover-design inside-cover">
               <div class="inner-cover-design">
@@ -453,7 +453,7 @@ onUnmounted(() => {
                 </div>
               </div>
             </div>
-            
+
             <!-- Last Sheet Back: Back Cover External -->
             <div v-else-if="index === totalSheets - 1" class="cover-design front-cover back-outer">
               <!-- Back cover is usually plain or has minimal branding -->
@@ -535,7 +535,7 @@ onUnmounted(() => {
   position: fixed;
   top: 0;
   left: 0;
-  background: #0f172a; 
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .passport-stage {
@@ -601,7 +601,7 @@ onUnmounted(() => {
 
 /* --- DESIGNS --- */
 .cover-design.front-cover {
-  background-color: #0d1b2a; 
+  background-color: #0d1b2a;
   background-image: linear-gradient(135deg, #132238 0%, #0a1520 100%);
   color: #FFD700;
   display: flex;
@@ -635,7 +635,7 @@ onUnmounted(() => {
 
 .page-design {
   background: #fdfbf7;
-  background-image: radial-gradient(#e6e6e6 1px, transparent 1px); 
+  background-image: radial-gradient(#e6e6e6 1px, transparent 1px);
   background-size: 10px 10px;
   padding: 20px;
   box-sizing: border-box;
@@ -895,11 +895,19 @@ onUnmounted(() => {
   width: 100%;
   padding: 8px 12px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(79, 172, 254, 0.5);
+  background: rgba(15, 15, 35, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   color: #fff;
   font-size: 0.9rem;
   outline: none;
+  transition: all 0.3s ease;
+}
+
+.passport-search input:focus {
+  border-color: #4facfe;
+  box-shadow: 0 0 20px rgba(79, 172, 254, 0.3);
 }
 
 .passport-search input::placeholder {
@@ -962,8 +970,8 @@ onUnmounted(() => {
 }
 
 .control-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(79, 172, 254, 0.2);
+  border: 1px solid rgba(79, 172, 254, 0.5);
   color: white;
   width: 40px;
   height: 40px;
@@ -974,11 +982,19 @@ onUnmounted(() => {
   cursor: pointer;
   font-size: 1.2rem;
   transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .control-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(79, 172, 254, 0.4);
   transform: scale(1.1);
+  box-shadow: 0 0 20px rgba(79, 172, 254, 0.5);
+}
+
+.control-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .cover-design.back-outer {

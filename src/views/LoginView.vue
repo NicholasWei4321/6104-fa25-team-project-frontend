@@ -14,7 +14,7 @@ const isRegistering = ref(false);
 onMounted(() => {
   authStore.init();
   if (authStore.isAuthenticated) {
-    router.push('/');
+    router.push('/home');
   }
 });
 
@@ -30,7 +30,7 @@ async function handleSubmit() {
       alert(result.error);
     } else {
       // Registration successful and auto-logged in
-      router.push('/');
+      router.push('/home');
     }
   } else {
     const result = await authStore.login(username.value, password.value);
@@ -38,7 +38,7 @@ async function handleSubmit() {
       alert(result.error);
     } else {
       // Login successful
-      router.push('/');
+      router.push('/home');
     }
   }
 }

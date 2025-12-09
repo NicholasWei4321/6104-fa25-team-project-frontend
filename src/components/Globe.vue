@@ -39,6 +39,8 @@ const tooltip = ref({
 
 let world;
 let countriesData = []; // Store countries data for random selection
+let autoRotateTimeout = null;
+let isUserInteracting = false;
 
 onMounted(() => {
   // Initialize Globe
@@ -126,13 +128,69 @@ onMounted(() => {
         .onPolygonClick((clickD) => {
           if (clickD) {
             const countryName = clickD.properties.ADMIN;
-            emit("select-country", countryName);
+
+            // Hide tooltip immediately on click
+            tooltip.value.visible = false;
+
+            // Stop auto-rotation
+            const controls = world.controls();
+            controls.autoRotate = false;
+            isUserInteracting = true;
+
+            // Clear any pending timeout
+            if (autoRotateTimeout) {
+              clearTimeout(autoRotateTimeout);
+            }
+
+            // Calculate center coordinates of the country
+            let lat, lng;
+            if (clickD.geometry.type === "Polygon") {
+              const coords = clickD.geometry.coordinates[0];
+              lng = coords.reduce((sum, c) => sum + c[0], 0) / coords.length;
+              lat = coords.reduce((sum, c) => sum + c[1], 0) / coords.length;
+            } else if (clickD.geometry.type === "MultiPolygon") {
+              const allCoords = clickD.geometry.coordinates.flat(2);
+              lng = allCoords.filter((_, i) => i % 2 === 0).reduce((sum, c) => sum + c, 0) / (allCoords.length / 2);
+              lat = allCoords.filter((_, i) => i % 2 === 1).reduce((sum, c) => sum + c, 0) / (allCoords.length / 2);
+            }
+
+            // Zoom into the country with animation
+            world.pointOfView({ lat, lng, altitude: 1.2 }, 1000); // 1 second animation
+
+            // Emit the country selection after zoom animation completes
+            setTimeout(() => {
+              emit("select-country", countryName);
+            }, 1000);
           }
         });
     });
 
-  // Auto-rotate
-  world.controls().autoRotate = false;
+  // Auto-rotate when not interacting
+  world.controls().autoRotate = true;
+  world.controls().autoRotateSpeed = 0.5;
+
+  // Stop rotation when user interacts
+  const controls = world.controls();
+  controls.addEventListener('start', () => {
+    isUserInteracting = true;
+    controls.autoRotate = false;
+
+    // Clear any pending timeout
+    if (autoRotateTimeout) {
+      clearTimeout(autoRotateTimeout);
+    }
+  });
+
+  controls.addEventListener('end', () => {
+    isUserInteracting = false;
+
+    // Resume auto-rotate after 3 seconds of inactivity
+    autoRotateTimeout = setTimeout(() => {
+      if (!isUserInteracting) {
+        controls.autoRotate = true;
+      }
+    }, 3000);
+  });
 
   // Handle resize
   window.addEventListener("resize", onWindowResize);
@@ -182,20 +240,49 @@ const selectRandomCountry = () => {
   // Spin globe to the country
   world.pointOfView({ lat, lng, altitude: 1.5 }, 2000); // 2 second animation
 
+  // Hide tooltip
+  tooltip.value.visible = false;
+
   // Emit the country selection after the globe animation
   setTimeout(() => {
     emit("select-country", countryName);
   }, 2000);
 };
 
+// Function to hide tooltip (can be called from parent)
+const hideTooltip = () => {
+  tooltip.value.visible = false;
+};
+
+// Function to reset view and resume rotation
+const resetView = () => {
+  if (!world) return;
+
+  // Zoom out to default view
+  world.pointOfView({ lat: 0, lng: 0, altitude: 2.5 }, 1000);
+
+  // Resume auto-rotation
+  const controls = world.controls();
+  controls.autoRotate = true;
+  isUserInteracting = false;
+};
+
 // Expose the function to parent component
 defineExpose({
-  selectRandomCountry
+  selectRandomCountry,
+  hideTooltip,
+  resetView
 });
 
 onUnmounted(() => {
   window.removeEventListener("resize", onWindowResize);
   window.removeEventListener("mousemove", onMouseMove);
+
+  // Clear timeout
+  if (autoRotateTimeout) {
+    clearTimeout(autoRotateTimeout);
+  }
+
   if (world) {
     world._destructor(); // Cleanup if available
     // Or clear container

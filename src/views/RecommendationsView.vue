@@ -171,7 +171,32 @@ function handleSongAlreadyInPlaylist() {
         <div class="title-container">
           <h1>{{ country }}</h1>
         </div>
-        <div v-if="loading" class="loading">Loading recommendations…</div>
+        <div v-if="loading" class="loading">
+          <div class="loading-content">
+            <div class="music-icon">♪</div>
+            <p>Loading recommendations…</p>
+            <div class="music-bar-container">
+              <div class="music-bar">
+                <div class="bar" style="animation-delay: 0s;"></div>
+                <div class="bar" style="animation-delay: 0.1s;"></div>
+                <div class="bar" style="animation-delay: 0.2s;"></div>
+                <div class="bar" style="animation-delay: 0.3s;"></div>
+                <div class="bar" style="animation-delay: 0.4s;"></div>
+                <div class="bar" style="animation-delay: 0.5s;"></div>
+                <div class="bar" style="animation-delay: 0.1s;"></div>
+                <div class="bar" style="animation-delay: 0.3s;"></div>
+                <div class="bar" style="animation-delay: 0.2s;"></div>
+                <div class="bar" style="animation-delay: 0.4s;"></div>
+                <div class="bar" style="animation-delay: 0s;"></div>
+                <div class="bar" style="animation-delay: 0.5s;"></div>
+                <div class="bar" style="animation-delay: 0.2s;"></div>
+                <div class="bar" style="animation-delay: 0.4s;"></div>
+                <div class="bar" style="animation-delay: 0.1s;"></div>
+                <div class="bar" style="animation-delay: 0.3s;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div v-else class="main-container">
           <div class="panel-container">
             <h1>Our Picks</h1>
@@ -300,7 +325,9 @@ function handleSongAlreadyInPlaylist() {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -311,10 +338,12 @@ function handleSongAlreadyInPlaylist() {
   position: relative;
   width: min(1100px, 92vw);
   max-height: 86vh;
-  background: #0b0b0b;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  background: rgba(15, 15, 35, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(79, 172, 254, 0.3);
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
   overflow: hidden;
 }
 
@@ -325,15 +354,17 @@ function handleSongAlreadyInPlaylist() {
   width: 36px;
   height: 36px;
   border: none;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  border-radius: 50%;
+  background: rgba(79, 172, 254, 0.2);
+  color: #4facfe;
   font-size: 24px;
   line-height: 24px;
   cursor: pointer;
+  transition: all 0.3s ease;
 }
 .close-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(79, 172, 254, 0.4);
+  transform: scale(1.1);
 }
 
 .modal-content {
@@ -354,8 +385,9 @@ function handleSongAlreadyInPlaylist() {
   font-size: 2rem;
   font-weight: 600;
   margin: 0;
-  color: #38bdf8;
+  color: #4facfe;
   letter-spacing: 0.05em;
+  text-shadow: 0 0 20px rgba(79, 172, 254, 0.5);
 }
 
 .main-container {
@@ -385,8 +417,9 @@ function handleSongAlreadyInPlaylist() {
   font-size: 1.4rem;
   font-weight: 600;
   margin: 0;
-  color: #38bdf8;
+  color: #4facfe;
   letter-spacing: 0.05em;
+  text-shadow: 0 0 15px rgba(79, 172, 254, 0.4);
 }
 
 .song-container {
@@ -415,8 +448,74 @@ function handleSongAlreadyInPlaylist() {
 }
 
 .loading {
-  padding: 8px;
-  color: #ddd;
+  padding: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.music-icon {
+  font-size: 3rem;
+  color: #4facfe;
+  animation: float 2s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.loading-content p {
+  color: #e4e4e7;
+  font-size: 1.1rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+.music-bar-container {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.music-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 80px;
+  width: 100%;
+  justify-content: center;
+}
+
+.bar {
+  width: 12px;
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  border-radius: 6px 6px 0 0;
+  animation: musicBounce 1s ease-in-out infinite;
+  box-shadow: 0 0 15px rgba(79, 172, 254, 0.6);
+}
+
+@keyframes musicBounce {
+  0%, 100% {
+    height: 15px;
+  }
+  50% {
+    height: 70px;
+  }
 }
 
 /* Suggestion Card Styles */

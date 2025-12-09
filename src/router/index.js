@@ -7,13 +7,14 @@ const router = createRouter({
   routes: [
     {
       path: "/",
-      name: "home",
-      component: HomeView,
-    },
-    {
-      path: "/login",
       name: "login",
       component: () => import("../views/LoginView.vue"),
+    },
+    {
+      path: "/home",
+      name: "home",
+      component: HomeView,
+      meta: { requiresAuth: true },
     },
     {
       path: "/profile",
@@ -41,9 +42,12 @@ router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
   authStore.init(); // Initialize from localStorage
 
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+  // If user is authenticated and trying to access login, redirect to home
+  if (to.name === 'login' && authStore.isAuthenticated) {
+    next("/home");
+  } else if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     // Redirect to login if route requires auth and user is not authenticated
-    next("/login");
+    next("/");
   } else {
     next();
   }

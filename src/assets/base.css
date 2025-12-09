@@ -1,10 +1,10 @@
 /* color palette */
 :root {
-  --color-background: #ffffff;
-  --color-background-soft: #f8f8f8;
-  --color-border: #dcdcdc;
-  --color-text: #2c3e50;
-  --color-heading: #1a1a1a;
+  --color-background: rgba(15, 15, 35, 0.95);
+  --color-background-soft: rgba(26, 26, 46, 0.9);
+  --color-border: rgba(79, 172, 254, 0.2);
+  --color-text: #e4e4e7;
+  --color-heading: #ffffff;
 }
 
 *,
@@ -18,7 +18,7 @@
 body {
   min-height: 100vh;
   color: var(--color-text);
-  background: var(--color-background);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   line-height: 1.6;
   font-family:
     Inter,
