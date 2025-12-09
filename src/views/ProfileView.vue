@@ -1001,7 +1001,6 @@ onUnmounted(() => {
   border-left: none;
   border-right: 5px solid #081018; /* Spine on right when closed back */
   border-radius: 5px 2px 2px 5px;
-  transform: rotateY(180deg); /* Pre-rotated content correction if needed, though face handles it */
 }
 
 .back-center {
