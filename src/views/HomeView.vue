@@ -78,7 +78,7 @@ function selectRandomCountry() {
 <style scoped>
 main {
   width: 100%;
-  height: calc(100vh - 80px);
+  height: calc(100vh - 50px);
   overflow: hidden;
   position: relative;
 }
