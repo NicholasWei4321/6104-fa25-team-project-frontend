@@ -201,7 +201,7 @@ main {
 /* Thinking bubble */
 .thinking-bubble {
   position: absolute;
-  top: 120px;
+  top: 30px;
   right: 30px;
   z-index: 101;
   animation: fadeInFloat 0.8s ease-out;

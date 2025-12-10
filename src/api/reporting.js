@@ -67,3 +67,20 @@ export async function getReporters(objectId) {
   });
   return response.data;
 }
+
+/**
+ * Check if a user has reported an object
+ * @param {string} objectId
+ * @param {string} userId
+ * @returns {Promise<{hasReported: boolean}>}
+ */
+export async function hasUserReported(objectId, userId) {
+  try {
+    const reporters = await getReporters(objectId);
+    const reportersList = reporters[0]?.reporters || [];
+    return { hasReported: reportersList.includes(userId) };
+  } catch (error) {
+    console.error("Error checking report status:", error);
+    return { hasReported: false };
+  }
+}

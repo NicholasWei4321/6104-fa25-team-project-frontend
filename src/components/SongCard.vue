@@ -17,8 +17,9 @@
 
       <button
         class="song-card__flag-btn"
+        :class="{ 'reported': isReported }"
         @click.stop="handleFlag"
-        title="Report song"
+        :title="isReported ? 'Remove report' : 'Report song'"
       >
         <font-awesome-icon :icon="['fas', 'flag']" />
       </button>
@@ -75,12 +76,13 @@
 import { useAuthStore } from "@/stores/auth.js";
 import { usePlaylistStore } from "@/stores/playlist.js";
 import { logExploration } from "@/api/passport.js";
-import { reportObject } from "@/api/reporting.js";
+import { reportObject, unreportObject, hasUserReported } from "@/api/reporting.js";
 
 export default {
   name: "SongCard",
   emits: [
     "song-reported",
+    "song-unreported",
     "song-already-reported",
     "song-report-error",
     "playlist-added",
@@ -103,6 +105,8 @@ export default {
       showPlaylistPopup: false,
       popupRef: null,
       addBtnRef: null,
+      isReported: false,
+      checkingReportStatus: false,
     };
   },
   computed: {
@@ -115,6 +119,21 @@ export default {
       const playlistStore = usePlaylistStore();
       return playlistStore.playlists || [];
     },
+  },
+  async mounted() {
+    // Check if the current user has already reported this song
+    const authStore = useAuthStore();
+    if (authStore.user && this.songId) {
+      try {
+        this.checkingReportStatus = true;
+        const result = await hasUserReported(this.songId, authStore.user);
+        this.isReported = result.hasReported;
+      } catch (error) {
+        console.error("Error checking report status:", error);
+      } finally {
+        this.checkingReportStatus = false;
+      }
+    }
   },
   methods: {
     async toggleExpand() {
@@ -152,6 +171,7 @@ export default {
       console.log("[Button Click] Flag/Report button clicked for song:", {
         title: this.title,
         artist: this.artist,
+        currentStatus: this.isReported,
       });
       try {
         const authStore = useAuthStore();
@@ -159,20 +179,36 @@ export default {
           alert("You must be logged in to report a song.");
           return;
         }
-        console.log("[Action] Reporting song:", this.songId);
-        const result = await reportObject(this.songId, authStore.user);
-        if (result && result.error) {
-          if (result.error.includes("already reported")) {
-            this.$emit("song-already-reported");
-          } else {
+
+        if (this.isReported) {
+          // User wants to unreport
+          console.log("[Action] Unreporting song:", this.songId);
+          const result = await unreportObject(this.songId, authStore.user);
+          if (result && result.error) {
             this.$emit("song-report-error");
+          } else {
+            this.isReported = false;
+            this.$emit("song-unreported");
           }
         } else {
-          this.$emit("song-reported");
+          // User wants to report
+          console.log("[Action] Reporting song:", this.songId);
+          const result = await reportObject(this.songId, authStore.user);
+          if (result && result.error) {
+            if (result.error.includes("already reported")) {
+              this.isReported = true;
+              this.$emit("song-already-reported");
+            } else {
+              this.$emit("song-report-error");
+            }
+          } else {
+            this.isReported = true;
+            this.$emit("song-reported");
+          }
         }
       } catch (error) {
-        console.error("Failed to report song:", error);
-        alert("Failed to report song. Please try again later.");
+        console.error("Failed to toggle report status:", error);
+        alert("Failed to update report. Please try again later.");
       }
     },
     handleAdd() {
@@ -311,6 +347,12 @@ export default {
 }
 .song-card__flag-btn:hover {
   color: #ef4444;
+}
+.song-card__flag-btn.reported {
+  color: #ef4444;
+}
+.song-card__flag-btn.reported:hover {
+  color: #dc2626;
 }
 .song-card__add-btn {
   position: absolute;

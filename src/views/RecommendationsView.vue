@@ -80,7 +80,8 @@ async function submitSuggestion() {
   }
 }
 
-onMounted(async () => {
+async function loadRecommendations() {
+  console.log("[Action] Loading recommendations for:", country.value);
   loading.value = true;
   error.value = null;
 
@@ -100,6 +101,15 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
+}
+
+function handleRetry() {
+  console.log("[Button Click] Retry button clicked");
+  loadRecommendations();
+}
+
+onMounted(async () => {
+  await loadRecommendations();
 });
 
 function handleClose() {
@@ -109,6 +119,15 @@ function handleClose() {
 function handleSongReported() {
   console.log("[Event] Song reported notification triggered");
   notificationMessage.value = "Thank you for reporting this song.";
+  showNotification.value = true;
+  setTimeout(() => {
+    showNotification.value = false;
+  }, 3000);
+}
+
+function handleSongUnreported() {
+  console.log("[Event] Song unreported notification triggered");
+  notificationMessage.value = "Report removed.";
   showNotification.value = true;
   setTimeout(() => {
     showNotification.value = false;
@@ -199,7 +218,18 @@ function handleSongAlreadyInPlaylist() {
         </div>
         <div v-else class="main-container">
           <div class="panel-container">
-            <h1>Our Picks</h1>
+            <div class="panel-header">
+              <h1>Our Picks</h1>
+              <button
+                class="retry-button"
+                @click="handleRetry"
+                :disabled="loading"
+                title="Get new recommendations"
+              >
+                <font-awesome-icon :icon="['fas', 'rotate-right']" :class="{ 'spinning': loading }" />
+                Retry
+              </button>
+            </div>
             <div class="song-container">
               <SongCard
                 v-for="s in ourPicks"
@@ -213,6 +243,7 @@ function handleSongAlreadyInPlaylist() {
                 :country="country"
                 :rec-type="s.recType || 'System'"
                 @song-reported="handleSongReported"
+                @song-unreported="handleSongUnreported"
                 @song-already-reported="handleSongAlreadyReported"
                 @song-report-error="handleSongReportError"
                 @playlist-added="handlePlaylistAdded"
@@ -236,6 +267,7 @@ function handleSongAlreadyInPlaylist() {
                 :country="country"
                 :rec-type="s.recType || 'Community'"
                 @song-reported="handleSongReported"
+                @song-unreported="handleSongUnreported"
                 @song-already-reported="handleSongAlreadyReported"
                 @song-report-error="handleSongReportError"
                 @playlist-added="handlePlaylistAdded"
@@ -361,6 +393,7 @@ function handleSongAlreadyInPlaylist() {
   line-height: 24px;
   cursor: pointer;
   transition: all 0.3s ease;
+  z-index: 10;
 }
 .close-btn:hover {
   background: rgba(79, 172, 254, 0.4);
@@ -376,9 +409,9 @@ function handleSongAlreadyInPlaylist() {
 
 .title-container {
   display: flex;
+  align-items: center;
   padding: 0;
   margin-bottom: 8px;
-  gap: 0;
 }
 .title-container h1 {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -388,6 +421,52 @@ function handleSongAlreadyInPlaylist() {
   color: #4facfe;
   letter-spacing: 0.05em;
   text-shadow: 0 0 20px rgba(79, 172, 254, 0.5);
+}
+
+.retry-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(79, 172, 254, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(79, 172, 254, 0.3);
+  border-radius: 10px;
+  color: #4facfe;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.retry-button:hover:not(:disabled) {
+  background: rgba(79, 172, 254, 0.3);
+  border-color: rgba(79, 172, 254, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+}
+
+.retry-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.retry-button svg {
+  font-size: 1rem;
+}
+
+.retry-button .spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .main-container {
@@ -413,6 +492,15 @@ function handleSongAlreadyInPlaylist() {
   padding: 0rem 0.5rem 0.5rem;
   flex: 1;
 }
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
+}
+
 .panel-container h1 {
   font-size: 1.4rem;
   font-weight: 600;
