@@ -92,21 +92,8 @@ onMounted(() => {
   )
     .then((res) => res.json())
     .then((countries) => {
-      // Filter countries by minimum population to ensure there's likely music content
-      const MIN_POPULATION = 500000; // 1 million
-
-      countriesData = countries.features.filter((d) => {
-        // Exclude Antarctica
-        if (d.properties.ISO_A2 === "AQ") return false;
-
-        // Exclude countries with population below threshold
-        const population = d.properties.POP_EST || 0;
-        if (population < MIN_POPULATION) return false;
-
-        return true;
-      });
-
-      console.log(`Loaded ${countriesData.length} countries for random selection (population > ${MIN_POPULATION.toLocaleString()})`);
+      // Store countries data for random selection (exclude only Antarctica)
+      countriesData = countries.features.filter((d) => d.properties.ISO_A2 !== "AQ");
 
       world
         .polygonsData(countriesData)
