@@ -78,9 +78,11 @@ function selectRandomCountry() {
 <style scoped>
 main {
   width: 100%;
-  height: calc(100vh - 50px);
+  height: 100vh;
   overflow: hidden;
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
 }
 
 /* Floating music notes */
@@ -201,7 +203,7 @@ main {
 /* Thinking bubble */
 .thinking-bubble {
   position: absolute;
-  top: 30px;
+  top: 100px;
   right: 30px;
   z-index: 101;
   animation: fadeInFloat 0.8s ease-out;

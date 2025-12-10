@@ -61,7 +61,7 @@ async function handleLogout() {
 
 header {
   line-height: 1.5;
-  background: rgba(15, 15, 35, 0.85);
+  background: rgba(30, 30, 60, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   padding: 0.75rem 2rem;
@@ -69,8 +69,8 @@ header {
   position: sticky;
   top: 0;
   z-index: 1000;
-  border-bottom: 1px solid rgba(79, 172, 254, 0.2);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(79, 172, 254, 0.3);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
 }
 
 nav {

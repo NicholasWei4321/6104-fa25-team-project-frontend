@@ -233,7 +233,6 @@ function handleSongAlreadyInPlaylist() {
             </div>
             <div class="song-container">
               <div v-if="ourPicks.length === 0 && !loading" class="no-recommendations">
-                <div class="no-recs-icon">🎵</div>
                 <p>We couldn't find any recommendations for this country.</p>
                 <p class="no-recs-sub">Try the retry button or check out community picks!</p>
               </div>
@@ -261,6 +260,10 @@ function handleSongAlreadyInPlaylist() {
           <div class="panel-container">
             <h1>Community Picks</h1>
             <div class="song-container">
+              <div v-if="communityPicks.length === 0 && !loading" class="no-recommendations">
+                <p>No one has made any recommendations for this country yet.</p>
+                <p class="no-recs-sub">Be the first to suggest a song!</p>
+              </div>
               <SongCard
                 v-for="s in communityPicks"
                 :key="s._id"
