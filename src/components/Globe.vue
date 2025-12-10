@@ -92,38 +92,8 @@ onMounted(() => {
   )
     .then((res) => res.json())
     .then((countries) => {
-      // Filter out Antarctica, small territories, and low-population countries
-      // Minimum population: 1 million to ensure there's likely music content
-      const MIN_POPULATION = 1000000;
-
-      // List of territories and dependencies to exclude
-      const EXCLUDED_TERRITORIES = [
-        'Falkland Islands', 'French Southern and Antarctic Lands',
-        'Greenland', 'New Caledonia', 'French Polynesia',
-        'Western Sahara', 'Northern Cyprus', 'Somaliland',
-        'Kosovo', 'Palestine', 'Puerto Rico', 'Guam',
-        'American Samoa', 'U.S. Virgin Islands', 'Bermuda',
-        'Cayman Islands', 'Gibraltar', 'Isle of Man', 'Jersey',
-        'Guernsey', 'Faroe Islands', 'Aruba', 'Curacao',
-        'Sint Maarten', 'British Virgin Islands', 'Turks and Caicos Islands',
-        'Anguilla', 'Montserrat', 'Saint Helena'
-      ];
-
-      countriesData = countries.features.filter((d) => {
-        // Exclude Antarctica
-        if (d.properties.ISO_A2 === "AQ") return false;
-
-        // Exclude known territories and dependencies
-        if (EXCLUDED_TERRITORIES.includes(d.properties.ADMIN)) return false;
-
-        // Exclude countries with population below threshold
-        const population = d.properties.POP_EST || 0;
-        if (population < MIN_POPULATION) return false;
-
-        return true;
-      });
-
-      console.log(`Loaded ${countriesData.length} countries for random selection`);
+      // Store countries data for random selection
+      countriesData = countries.features.filter((d) => d.properties.ISO_A2 !== "AQ");
 
       world
         .polygonsData(countriesData)

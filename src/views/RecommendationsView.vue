@@ -221,6 +221,7 @@ function handleSongAlreadyInPlaylist() {
             <div class="panel-header">
               <h1>Our Picks</h1>
               <button
+                v-if="ourPicks.length === 0 && !loading"
                 class="retry-button"
                 @click="handleRetry"
                 :disabled="loading"
@@ -231,6 +232,11 @@ function handleSongAlreadyInPlaylist() {
               </button>
             </div>
             <div class="song-container">
+              <div v-if="ourPicks.length === 0 && !loading" class="no-recommendations">
+                <div class="no-recs-icon">🎵</div>
+                <p>We couldn't find any recommendations for this country.</p>
+                <p class="no-recs-sub">Try the retry button or check out community picks!</p>
+              </div>
               <SongCard
                 v-for="s in ourPicks"
                 :key="s._id"
@@ -533,6 +539,34 @@ function handleSongAlreadyInPlaylist() {
 }
 .song-container::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.4);
+}
+
+.no-recommendations {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+  color: #94a3b8;
+  gap: 0.5rem;
+}
+
+.no-recs-icon {
+  font-size: 3rem;
+  opacity: 0.5;
+  margin-bottom: 0.5rem;
+}
+
+.no-recommendations p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.no-recs-sub {
+  font-size: 0.9rem;
+  opacity: 0.7;
 }
 
 .loading {
